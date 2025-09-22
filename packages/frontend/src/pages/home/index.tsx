@@ -30,6 +30,14 @@ const HomePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [url, setUrl] = useState("");
 
+  // Agregado, constantes del checkbox
+  const [isChecked, setIsChecked] = useState(false);
+
+  const handleOnChange = () => {
+    setIsChecked(!isChecked);
+  };
+  //
+
   const handleClick = async () => {
     setIsLoading(true);
     setCurrStatus(AppStatus.LOADING);
@@ -97,6 +105,28 @@ const HomePage = () => {
           iconName="link"
           disabled={isLoading}
         />
+
+        <div className="
+        flex align-items-center mb-8 pl-1 
+        text-text-secondary-light dark:text-text-secondary-dark text-xs
+        gap-4">
+          Do you want the file to include the timestamp for each topic?:
+          <div className="flex items-center gap-1 
+          text-text-secondary-light dark:text-text-secondary-dark">
+            <input
+              className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded-xs 
+              dark:bg-gray-700 dark:border-gray-600"
+              type="checkbox"
+              id="topping"
+              name="topping"
+              value="Paneer"
+              checked={isChecked}
+              onChange={handleOnChange}
+            />
+            I want
+          </div>
+        </div>
+
         <Button
           buttonType="secondary"
           className="uppercase flex justify-center gap-1"
