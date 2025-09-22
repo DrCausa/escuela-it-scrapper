@@ -1,0 +1,313 @@
+@import "tailwindcss";
+@import "material-symbols";
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-Thin.ttf") format("truetype");
+  font-weight: 100;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-ThinItalic.ttf") format("truetype");
+  font-weight: 100;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-ExtraLight.ttf") format("truetype");
+  font-weight: 200;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-ExtraLightItalic.ttf") format("truetype");
+  font-weight: 200;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-LightItalic.ttf") format("truetype");
+  font-weight: 300;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-MediumItalic.ttf") format("truetype");
+  font-weight: 500;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-SemiBoldItalic.ttf") format("truetype");
+  font-weight: 600;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-BoldItalic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-ExtraBoldItalic.ttf") format("truetype");
+  font-weight: 800;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-Black.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-BlackItalic.ttf") format("truetype");
+  font-weight: 900;
+  font-style: italic;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-primary: "Poppins", sans-serif;
+  --font-secondary: monospace;
+
+  /* Palette */
+  --color-true-blue: #0466c8;
+  --color-sapphire: #0353a4;
+  --color-yale-blue: #023e7d;
+  --color-oxford-blue: #002855;
+  --color-oxford-blue-2: #001845;
+  --color-oxford-blue-3: #001233;
+
+  --color-delft-blue: #33415c;
+  --color-paynes-gray: #5c677d;
+  --color-slate-gray: #7d8597;
+  --color-cool-gray: #979dac;
+
+  /* Light - Backgrounds */
+  --color-bg-subtle-light: #f1f3f7;
+  --color-bg-primary-light: #f7f9fc;
+  --color-bg-secondary-light: #eceff3;
+  --color-bg-surface-light: #ffffff;
+  --color-bg-elevated-light: #ffffff;
+
+  /* Light - Borders */
+  --color-border-subtle-light: #e5e9ef;
+  --color-border-light: #dce1e9;
+  --color-border-strong-light: #b3b9c6;
+  --color-border-heavy-light: #8b95a9;
+
+  /* Dark - Backgrounds */
+  --color-bg-subtle-dark: #13151c;
+  --color-bg-primary-dark: #0f1116;
+  --color-bg-secondary-dark: #181b22;
+  --color-bg-surface-dark: #1c1f26;
+  --color-bg-elevated-dark: #222630;
+
+  /* Dark - Borders */
+  --color-border-subtle-dark: #222630;
+  --color-border-dark: #2a2f3a;
+  --color-border-strong-dark: #3f4656;
+  --color-border-heavy-dark: #5c677d;
+
+  /* Text Colors */
+  --color-text-primary-light: #1a1a1a;
+  --color-text-secondary-light: #4d4d4d;
+  --color-text-tertiary-light: #7d8597;
+  --color-text-inverse-light: #ffffff;
+
+  --color-text-primary-dark: #f0f2f8;
+  --color-text-secondary-dark: #c0c5d1;
+  --color-text-tertiary-dark: #8b95a9;
+  --color-text-inverse-dark: #1a1a1a;
+
+  /* Disabled State */
+  --color-disabled-bg-light: #e6e9ef;
+  --color-disabled-border-light: #c9cfd9;
+  --color-disabled-text-light: #a0a7b3;
+
+  --color-disabled-bg-dark: #2a2e38;
+  --color-disabled-border-dark: #3a3f4c;
+  --color-disabled-text-dark: #7c8596;
+
+  /* Primary */
+  --color-btn-primary-bg: var(--color-true-blue);
+  --color-btn-primary-bg-hover: var(--color-sapphire);
+  --color-btn-primary-text: #ffffff;
+  --color-btn-primary-outline-border: var(--color-true-blue);
+  --color-btn-primary-outline-text: var(--color-true-blue);
+  --color-btn-primary-outline-hover-bg: var(--color-true-blue);
+  --color-btn-primary-outline-hover-text: #ffffff;
+
+  /* Secondary */
+  --color-btn-secondary-bg: var(--color-delft-blue);
+  --color-btn-secondary-bg-hover: var(--color-paynes-gray);
+  --color-btn-secondary-text: #ffffff;
+  --color-btn-secondary-outline-border: var(--color-delft-blue);
+  --color-btn-secondary-outline-text: var(--color-delft-blue);
+  --color-btn-secondary-outline-hover-bg: var(--color-delft-blue);
+  --color-btn-secondary-outline-hover-text: #ffffff;
+
+  /* Success */
+  --color-btn-success-bg: #178d7e;
+  --color-btn-success-bg-hover: #127066;
+  --color-btn-success-text: #ffffff;
+  --color-btn-success-outline-border: #178d7e;
+  --color-btn-success-outline-text: #178d7e;
+  --color-btn-success-outline-hover-bg: #178d7e;
+  --color-btn-success-outline-hover-text: #ffffff;
+
+  /* Warning */
+  --color-btn-warning-bg: #f5b400;
+  --color-btn-warning-bg-hover: #d99800;
+  --color-btn-warning-text: #1a1a1a;
+  --color-btn-warning-outline-border: #f5b400;
+  --color-btn-warning-outline-text: #f5b400;
+  --color-btn-warning-outline-hover-bg: #f5b400;
+  --color-btn-warning-outline-hover-text: #1a1a1a;
+
+  /* Danger */
+  --color-btn-danger-bg: #c0392b;
+  --color-btn-danger-bg-hover: #992d21;
+  --color-btn-danger-text: #ffffff;
+  --color-btn-danger-outline-border: #c0392b;
+  --color-btn-danger-outline-text: #c0392b;
+  --color-btn-danger-outline-hover-bg: #c0392b;
+  --color-btn-danger-outline-hover-text: #ffffff;
+
+  /* Info */
+  --color-btn-info-bg: var(--color-yale-blue);
+  --color-btn-info-bg-hover: var(--color-oxford-blue);
+  --color-btn-info-text: #ffffff;
+  --color-btn-info-outline-border: var(--color-yale-blue);
+  --color-btn-info-outline-text: var(--color-yale-blue);
+  --color-btn-info-outline-hover-bg: var(--color-yale-blue);
+  --color-btn-info-outline-hover-text: #ffffff;
+}
+
+[class^="material-symbols-"] {
+  font-variation-settings: "FILL" 0, "wght" 200, "GRAD" -25, "opsz" 24;
+  user-select: none;
+
+  &.filled {
+    font-variation-settings: "FILL" 1, "wght" 200, "GRAD" -25, "opsz" 24;
+  }
+}
+
+body.scrollbar-light {
+  &::-webkit-scrollbar {
+    width: 12px;
+  }
+  &::-webkit-scrollbar-track {
+    background: var(--color-bg-secondary-light);
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-strong-light);
+    border: solid 2px var(--color-bg-secondary-light);
+    border-radius: 10px;
+  }
+
+  & .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  & .custom-scrollbar::-webkit-scrollbar-track {
+    background: inherit;
+    border-radius: 6px;
+  }
+  & .custom-scrollbar::-webkit-scrollbar-thumb {
+    cursor: default;
+    background-color: var(--color-border-strong-light);
+    border-radius: 10px;
+  }
+}
+
+body.scrollbar-dark {
+  &::-webkit-scrollbar {
+    width: 12px;
+  }
+  &::-webkit-scrollbar-track {
+    background: var(--color-bg-secondary-dark);
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-strong-dark);
+    border: solid 2px var(--color-bg-secondary-dark);
+    border-radius: 10px;
+  }
+
+  & .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  & .custom-scrollbar::-webkit-scrollbar-track {
+    background: inherit;
+    border-radius: 6px;
+  }
+  & .custom-scrollbar::-webkit-scrollbar-thumb {
+    cursor: default;
+    background-color: var(--color-border-strong-dark);
+    border-radius: 10px;
+  }
+}

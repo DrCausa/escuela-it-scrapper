@@ -1,0 +1,23 @@
+{
+  "name": "escuela-it-scrapper",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "install:all": "pnpm install --recursive && pnpm --filter ./packages/backend run install-requirements",
+    "dev": "pnpm --parallel --filter ./packages/* run dev",
+    "dev:frontend": "pnpm --filter ./packages/frontend run dev",
+    "dev:backend": "pnpm --filter ./packages/backend run dev",
+    "build:frontend": "pnpm --filter ./packages/frontend run build",
+    "preview": "pnpm --filter ./packages/frontend run preview",
+    "start": "pnpm --filter ./packages/backend run start",
+    "lint": "pnpm --recursive run lint",
+    "clean": "pnpm --recursive run clean || true"
+  },
+  "devDependencies": {
+    "vite-tsconfig-paths": "^5.1.4"
+  }
+}
