@@ -31,7 +31,7 @@ const HomePage = () => {
   const [url, setUrl] = useState("");
 
   // Agregado, constantes del checkbox
-  const [isChecked, setIsChecked] = useState(false);
+  const [isChecked, setIsChecked] = useState(true); ///*** */
 
   const handleOnChange = () => {
     setIsChecked(!isChecked);
@@ -44,7 +44,7 @@ const HomePage = () => {
 
     try {
       const result = await scrape(url);
-      const contentResult = await get_content(result.result);
+      const contentResult = await get_content(isChecked, result.result);
       if (result.status === "error" || contentResult.status === "error") {
         setCurrStatus(AppStatus.ERROR);
         return;
@@ -106,13 +106,17 @@ const HomePage = () => {
           disabled={isLoading}
         />
 
-        <div className="
+        <div
+          className="
         flex align-items-center mb-8 pl-1 
         text-text-secondary-light dark:text-text-secondary-dark text-xs
-        gap-4">
+        gap-4"
+        >
           Do you want the file to include the timestamp for each topic?:
-          <div className="flex items-center gap-1 
-          text-text-secondary-light dark:text-text-secondary-dark">
+          <div
+            className="flex items-center gap-1 
+          text-text-secondary-light dark:text-text-secondary-dark"
+          >
             <input
               className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded-xs 
               dark:bg-gray-700 dark:border-gray-600"

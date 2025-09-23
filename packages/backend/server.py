@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from scrapper import getSrcURL
 from json_manager import read_json, write_json
+from formatter import formatter
 
 app = Flask(__name__)
 CORS(app)
@@ -31,6 +32,8 @@ def scrape():
 def get_content():
   data = request.json
   url = data.get("url")
+  hasTime = data.get("hasTime", True)
+
   if not url:
     return jsonify({
       "status": "error",
@@ -39,9 +42,10 @@ def get_content():
   try:
     req = requests.get(url)
     req.raise_for_status()
+    content = req.text if hasTime else formatter(req.text)
     return jsonify({
       "status": "success",
-      "result": req.text
+      "result": content
     })
   except Exception as e:
     return jsonify({
