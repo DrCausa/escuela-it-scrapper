@@ -1,6 +1,6 @@
-import { flattenClasses } from "@/utils/classNames";
-import HeaderOptions from "./parts/HeaderOptions";
-import HeaderTheme from "./parts/HeaderTheme";
+import { flattenClasses } from "@utils/classNames";
+import HeaderOptions from "@components/layouts/Header/parts/HeaderOptions";
+import HeaderTheme from "@components/layouts/Header/parts/HeaderTheme";
 
 const Header = () => {
   return (

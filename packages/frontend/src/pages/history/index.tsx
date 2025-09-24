@@ -24,7 +24,7 @@ const HistoryPage = () => {
   }, []);
 
   return (
-    <div className="w-[60rem] mx-auto mt-10">
+    <div className="w-[60rem] mx-auto my-10">
       <table className="w-full *:text-center *:text-sm">
         <thead className="**:px-4 **:py-2">
           <tr className="*:font-medium *:text-lg *:border-b">
@@ -92,7 +92,7 @@ const HistoryPage = () => {
               ))
           ) : (
             <tr>
-              <td colSpan={4}>
+              <td colSpan={5}>
                 <div className="gap-1 flex px-4 py-2 text-base items-center justify-center text-text-secondary-light dark:text-text-secondary-dark">
                   No existing data...
                   <Icon iconName="crisis_alert" />

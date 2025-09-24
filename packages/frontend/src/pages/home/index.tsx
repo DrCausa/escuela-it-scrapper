@@ -9,6 +9,7 @@ import { flattenClasses } from "@utils/classNames";
 import Input from "@components/commons/Input";
 import { usePageTitle } from "@hooks/usePageTitle";
 import { useState } from "react";
+import { playSound } from "@utils/playSound";
 
 const AppStatus = {
   IDLE: "Waiting for URL...",
@@ -29,14 +30,7 @@ const HomePage = () => {
   const [currStatus, setCurrStatus] = useState<AppStatus>(AppStatus.IDLE);
   const [isLoading, setIsLoading] = useState(false);
   const [url, setUrl] = useState("");
-
-  // Agregado, constantes del checkbox
-  const [isChecked, setIsChecked] = useState(true); ///*** */
-
-  const handleOnChange = () => {
-    setIsChecked(!isChecked);
-  };
-  //
+  const [isChecked, setIsChecked] = useState(false);
 
   const handleClick = async () => {
     setIsLoading(true);
@@ -64,6 +58,7 @@ const HomePage = () => {
       setCurrStatus(AppStatus.ERROR);
     } finally {
       setIsLoading(false);
+      playSound("mp3");
     }
   };
 
@@ -97,55 +92,47 @@ const HomePage = () => {
             <span className="text-btn-warning-bg-hover">[CONTENT]</span>
           </code>
         </div>
-        <Input
-          onChange={(e) => changeURL(e.target.value)}
-          value={url}
-          layoutClassName="mb-4"
-          label="Content URL"
-          iconName="link"
-          disabled={isLoading}
-        />
-
-        <div
-          className="
-        flex align-items-center mb-8 pl-1 
-        text-text-secondary-light dark:text-text-secondary-dark text-xs
-        gap-4"
-        >
-          Do you want the file to include the timestamp for each topic?:
-          <div
-            className="flex items-center gap-1 
-          text-text-secondary-light dark:text-text-secondary-dark"
-          >
-            <input
-              className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded-xs 
-              dark:bg-gray-700 dark:border-gray-600"
-              type="checkbox"
-              id="topping"
-              name="topping"
-              value="Paneer"
-              checked={isChecked}
-              onChange={handleOnChange}
-            />
-            I want
-          </div>
-        </div>
-
-        <Button
-          buttonType="secondary"
-          className="uppercase flex justify-center gap-1"
-          onClick={handleClick}
-          style={{
-            fontWeight: "400",
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleClick();
           }}
-          disabled={
-            currStatus !== AppStatus.READY && currStatus !== AppStatus.SUCCESS
-          }
-          isLoading={isLoading}
+          className="flex flex-col"
         >
-          Start Scraping
-          <Icon iconName="category_search" />
-        </Button>
+          <Input
+            onChange={(e) => changeURL(e.target.value)}
+            value={url}
+            label="Content URL"
+            iconName="link"
+            layoutClassName="mb-4"
+            disabled={isLoading}
+          />
+          <Input
+            type="checkbox"
+            label="Include timestamps"
+            checked={isChecked}
+            onChange={() => setIsChecked(!isChecked)}
+            layoutClassName="mb-4 justify-start"
+            labelCheckboxClassName="order-2"
+            checkboxClassName="order-1"
+            disabled={isLoading}
+          />
+          <Button
+            buttonType="secondary"
+            type="submit"
+            className="uppercase flex flex-1 justify-center gap-1"
+            style={{
+              fontWeight: "400",
+            }}
+            disabled={
+              currStatus !== AppStatus.READY && currStatus !== AppStatus.SUCCESS
+            }
+            isLoading={isLoading}
+          >
+            Start Scraping
+            <Icon iconName="manufacturing" />
+          </Button>
+        </form>
       </Card>
       <code className="text-base w-full text-center my-4 text-text-tertiary-light dark:text-text-tertiary-dark">
         &lt;{" "}

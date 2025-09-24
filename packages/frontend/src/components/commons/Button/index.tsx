@@ -1,6 +1,6 @@
 import { flattenClasses } from "@utils/classNames";
 import { type ButtonHTMLAttributes, type ReactNode } from "react";
-import Icon from "../Icon";
+import Icon from "@components/commons/Icon";
 
 export type BUTTON_TYPE =
   | "primary"
