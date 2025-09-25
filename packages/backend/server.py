@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from scrapper import getSrcURL
 from json_manager import read_json, write_json
-from formatter import formatter
+from formatter import formatter, get_TextFormatted
 
 app = Flask(__name__)
 CORS(app)
@@ -42,7 +42,11 @@ def get_content():
   try:
     req = requests.get(url)
     req.raise_for_status()
-    content = req.text if hasTime else formatter(req.text)
+    if (hasTime):
+      content = get_TextFormatted(req.text)
+    else:
+      content = formatter(req.text)
+    print(content)
     return jsonify({
       "status": "success",
       "result": content
@@ -91,3 +95,32 @@ def get_results():
 
 if __name__ == "__main__":
   app.run(debug=True, port=5000)
+
+@app.route("/format", methods=["POST"])
+def format_transcript():
+    data = request.json
+    transcript = data.get("transcript")
+
+    if not transcript:
+        return jsonify({
+            "status": "error",
+            "message": "No transcript provided"
+        })
+
+    try:
+        # Llamar al servicio Node (gemini-service)
+        response = requests.post(
+            "http://localhost:4000/format",  # tu gemini-service en Node
+            json={"transcript": transcript}
+        )
+        response.raise_for_status()
+
+        return jsonify({
+            "status": "success",
+            "result": response.json()
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        })
