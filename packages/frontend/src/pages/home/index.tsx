@@ -9,6 +9,7 @@ import { flattenClasses } from "@utils/classNames";
 import Input from "@components/commons/Input";
 import { usePageTitle } from "@hooks/usePageTitle";
 import { useState } from "react";
+import { playSound } from "@utils/playSound";
 
 const AppStatus = {
   IDLE: "Waiting for URL...",
@@ -29,6 +30,7 @@ const HomePage = () => {
   const [currStatus, setCurrStatus] = useState<AppStatus>(AppStatus.IDLE);
   const [isLoading, setIsLoading] = useState(false);
   const [url, setUrl] = useState("");
+  const [isChecked, setIsChecked] = useState(false);
 
   const handleClick = async () => {
     setIsLoading(true);
@@ -36,7 +38,7 @@ const HomePage = () => {
 
     try {
       const result = await scrape(url);
-      const contentResult = await get_content(result.result);
+      const contentResult = await get_content(isChecked, result.result);
       if (result.status === "error" || contentResult.status === "error") {
         setCurrStatus(AppStatus.ERROR);
         return;
@@ -56,6 +58,7 @@ const HomePage = () => {
       setCurrStatus(AppStatus.ERROR);
     } finally {
       setIsLoading(false);
+      playSound("mp3");
     }
   };
 
@@ -89,29 +92,47 @@ const HomePage = () => {
             <span className="text-btn-warning-bg-hover">[CONTENT]</span>
           </code>
         </div>
-        <Input
-          onChange={(e) => changeURL(e.target.value)}
-          value={url}
-          layoutClassName="mb-4"
-          label="Content URL"
-          iconName="link"
-          disabled={isLoading}
-        />
-        <Button
-          buttonType="secondary"
-          className="uppercase flex justify-center gap-1"
-          onClick={handleClick}
-          style={{
-            fontWeight: "400",
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleClick();
           }}
-          disabled={
-            currStatus !== AppStatus.READY && currStatus !== AppStatus.SUCCESS
-          }
-          isLoading={isLoading}
+          className="flex flex-col"
         >
-          Start Scraping
-          <Icon iconName="category_search" />
-        </Button>
+          <Input
+            onChange={(e) => changeURL(e.target.value)}
+            value={url}
+            label="Content URL"
+            iconName="link"
+            layoutClassName="mb-4"
+            disabled={isLoading}
+          />
+          <Input
+            type="checkbox"
+            label="Include timestamps"
+            checked={isChecked}
+            onChange={() => setIsChecked(!isChecked)}
+            layoutClassName="mb-4 justify-start"
+            labelCheckboxClassName="order-2"
+            checkboxClassName="order-1"
+            disabled={isLoading}
+          />
+          <Button
+            buttonType="secondary"
+            type="submit"
+            className="uppercase flex flex-1 justify-center gap-1"
+            style={{
+              fontWeight: "400",
+            }}
+            disabled={
+              currStatus !== AppStatus.READY && currStatus !== AppStatus.SUCCESS
+            }
+            isLoading={isLoading}
+          >
+            Start Scraping
+            <Icon iconName="manufacturing" />
+          </Button>
+        </form>
       </Card>
       <code className="text-base w-full text-center my-4 text-text-tertiary-light dark:text-text-tertiary-dark">
         &lt;{" "}

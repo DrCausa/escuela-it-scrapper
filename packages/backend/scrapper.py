@@ -2,7 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
 
-def getSrcURL(url, timeout = 10):
+def get_src_url(url, timeout = 10):
   driver = None
   try:
     driver = webdriver.Chrome()

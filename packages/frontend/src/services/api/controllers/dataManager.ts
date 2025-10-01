@@ -1,6 +1,6 @@
 import { api } from "@services/api";
-import type { DataType } from "../types/DataType";
-import type { DataResponseType } from "../types/DataResultType";
+import type { DataType } from "@services/api/types/DataType";
+import type { DataResponseType } from "@services/api/types/DataResultType";
 
 export const getData = async (): Promise<DataResponseType> => {
   try {
