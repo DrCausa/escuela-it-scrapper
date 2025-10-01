@@ -5,7 +5,7 @@
 Thumbs.db
 *.log
 *.tmp
-*.swp
+packages/backend/data.json
 
 # Environment files
 .env
