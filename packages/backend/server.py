@@ -1,9 +1,9 @@
 import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from scrapper import getSrcURL
+from scrapper import get_src_url
 from json_manager import read_json, write_json
-from formatter import formatter, get_TextFormatted
+from formatter import formatter, get_text_formatted
 
 app = Flask(__name__)
 CORS(app)
@@ -15,9 +15,9 @@ def scrape():
   if not url:
     return jsonify({
       "status": "error",
-      "message": "The 'url' parameter is missing from the request."
+      "message": "the 'url' parameter is missing from the request"
     })
-  res = getSrcURL(url)
+  res = get_src_url(url)
   if (res["status"] == "error"):
     return jsonify({
       "status": "error",
@@ -37,13 +37,13 @@ def get_content():
   if not url:
     return jsonify({
       "status": "error",
-      "message": "The 'url' parameter is missing from the request."
+      "message": "the 'url' parameter is missing from the request"
     })
   try:
     req = requests.get(url)
     req.raise_for_status()
     if (hasTime):
-      content = get_TextFormatted(req.text)
+      content = get_text_formatted(req.text)
     else:
       content = formatter(req.text)
     print(content)
@@ -104,13 +104,12 @@ def format_transcript():
     if not transcript:
         return jsonify({
             "status": "error",
-            "message": "No transcript provided"
+            "message": "no transcript provided"
         })
 
     try:
-        # Llamar al servicio Node (gemini-service)
         response = requests.post(
-            "http://localhost:4000/format",  # tu gemini-service en Node
+            "http://localhost:4000/format",
             json={"transcript": transcript}
         )
         response.raise_for_status()

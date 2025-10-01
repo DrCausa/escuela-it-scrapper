@@ -1,6 +1,4 @@
-from cgitb import text
 import re
-from urllib import response
 import requests;
 def formatter(text):      
     patterns = [
@@ -14,12 +12,11 @@ def formatter(text):
     temp_text = re.sub(patterns[2], " ", temp_text)
     return temp_text.strip()
 
-def get_TextFormatted(text):
+def get_text_formatted(text):
     response = requests.post(
         "http://localhost:4000/format",
         json={"text": text}
     )
     response.raise_for_status()
-    data = response.json()  # 🔥 extraer JSON
-    print("Respuesta de gemini-service:", data)
-    return data.get("data")  # nos interesa SOLO el texto formateado
+    data = response.json()
+    return data.get("data")
