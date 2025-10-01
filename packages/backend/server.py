@@ -46,7 +46,6 @@ def get_content():
       content = get_text_formatted(req.text)
     else:
       content = formatter(req.text)
-    print(content)
     return jsonify({
       "status": "success",
       "result": content

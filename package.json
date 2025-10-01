@@ -7,7 +7,8 @@
     "packages/*"
   ],
   "scripts": {
-    "install:all": "pnpm install --recursive && pnpm --filter ./packages/backend run install-requirements",
+    "pip-install": "pnpm --filter ./packages/backend run pip-install",
+    "install:all": "pnpm install && pnpm run pip-install",
     "dev": "pnpm --parallel --filter ./packages/* run dev",
     "dev:frontend": "pnpm --filter ./packages/frontend run dev",
     "dev:backend": "pnpm --filter ./packages/backend run dev",
@@ -18,6 +19,6 @@
     "clean": "pnpm --recursive run clean || true"
   },
   "devDependencies": {
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "5.1.4"
   }
 }
