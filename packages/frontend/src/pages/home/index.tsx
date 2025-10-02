@@ -31,6 +31,8 @@ const HomePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [url, setUrl] = useState("");
   const [isChecked, setIsChecked] = useState(false);
+  const [selTxt, setSelTxt] = useState(true);
+  const [selSrt, setSelSrt] = useState(false);
 
   const handleClick = async () => {
     setIsLoading(true);
@@ -38,20 +40,70 @@ const HomePage = () => {
 
     try {
       const result = await scrape(url);
-      const contentResult = await get_content(isChecked, result.result);
-      if (result.status === "error" || contentResult.status === "error") {
+      if (result.status === "error") {
         setCurrStatus(AppStatus.ERROR);
         return;
       }
-      const uuid = crypto.randomUUID();
       const now = Date.now();
-      const urlParts = url.split("/clase/");
-      await setData({
-        id: uuid,
-        fileName: urlParts[1] + "-" + now + ".txt",
-        generatedAt: now,
-        content: contentResult.result,
-      });
+      const base = (url.split("/clase/")[1] || "content").replace(/\/+$/g, "");
+
+      const jobs: Promise<any>[] = [];
+
+      if (selTxt) {
+        jobs.push(
+          (async () => {
+            const res = await get_content(false, result.result, "txt");
+            if (res.status === "success") {
+              await setData({
+                id: crypto.randomUUID(),
+                fileName: `${base}-${now}.txt`,
+                generatedAt: now,
+                content: res.result,
+              });
+            } else {
+              throw new Error("TXT generation failed");
+            }
+          })()
+        );
+      }
+
+      if (selSrt) {
+        jobs.push(
+          (async () => {
+            const res = await get_content(false, result.result, "srt");
+            if (res.status === "success") {
+              await setData({
+                id: crypto.randomUUID(),
+                fileName: `${base}-${now}.srt`,
+                generatedAt: now,
+                content: res.result,
+              });
+            } else {
+              throw new Error("SRT generation failed");
+            }
+          })()
+        );
+      }
+
+      if (isChecked) {
+        jobs.push(
+          (async () => {
+            const res = await get_content(true, result.result, "txt");
+            if (res.status === "success") {
+              await setData({
+                id: crypto.randomUUID(),
+                fileName: `${base}-${now}-timestamps.txt`,
+                generatedAt: now,
+                content: res.result,
+              });
+            } else {
+              throw new Error("Timestamps TXT generation failed");
+            }
+          })()
+        );
+      }
+
+      await Promise.all(jobs);
       setNotify("/history", true);
       setCurrStatus(AppStatus.SUCCESS);
     } catch (err) {
@@ -107,7 +159,7 @@ const HomePage = () => {
             layoutClassName="mb-4"
             disabled={isLoading}
           />
-          <Input
+          {/* <Input
             type="checkbox"
             label="Include timestamps"
             checked={isChecked}
@@ -116,7 +168,32 @@ const HomePage = () => {
             labelCheckboxClassName="order-2"
             checkboxClassName="order-1"
             disabled={isLoading}
-          />
+          /> */}
+          <div className="flex flex-col gap-2 mb-4">
+            <span className="text-sm text-text-secondary-light dark:text-text-secondary-dark">Select formats</span>
+            <div className="flex gap-6">
+              <Input
+                type="checkbox"
+                label="TXT"
+                checked={selTxt}
+                onChange={() => setSelTxt(!selTxt)}
+                layoutClassName="justify-start"
+                labelCheckboxClassName="order-2"
+                checkboxClassName="order-1"
+                disabled={isLoading}
+              />
+              <Input
+                type="checkbox"
+                label="SRT"
+                checked={selSrt}
+                onChange={() => setSelSrt(!selSrt)}
+                layoutClassName="justify-start"
+                labelCheckboxClassName="order-2"
+                checkboxClassName="order-1"
+                disabled={isLoading}
+              />
+            </div>
+          </div>
           <Button
             buttonType="secondary"
             type="submit"
@@ -125,7 +202,8 @@ const HomePage = () => {
               fontWeight: "400",
             }}
             disabled={
-              currStatus !== AppStatus.READY && currStatus !== AppStatus.SUCCESS
+              (currStatus !== AppStatus.READY && currStatus !== AppStatus.SUCCESS) ||
+              !(selTxt || selSrt || isChecked)
             }
             isLoading={isLoading}
           >

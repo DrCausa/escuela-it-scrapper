@@ -2,16 +2,10 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
 
-def get_src_url(url, timeout = 10):
+def getSrcURL(url, timeout = 10):
   driver = None
   try:
-    options = webdriver.ChromeOptions()
-    options.add_argument(r"--user-data-dir=C:\selenium-profile")
-    options.add_argument("--profile-directory=Default")
-    options.add_argument("--restore-last-session=false")
-    options.add_argument("--no-first-run")
-    driver = webdriver.Chrome(options=options)
-    driver.maximize_window()
+    driver = webdriver.Chrome()
     driver.implicitly_wait(timeout)
     driver.get(url)
 
@@ -44,3 +38,10 @@ def get_src_url(url, timeout = 10):
   finally:
     if driver:
       driver.quit()
+
+
+if __name__ == "__main__":
+    print("Scraping finalizado.")
+    import sys
+    sys.exit()
+
