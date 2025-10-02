@@ -92,33 +92,33 @@ def get_results():
     "result": data
   })
 
-if __name__ == "__main__":
-  app.run(debug=True, port=5000)
-
 @app.route("/format", methods=["POST"])
 def format_transcript():
-    data = request.json
-    transcript = data.get("transcript")
+  data = request.json
+  transcript = data.get("transcript")
 
-    if not transcript:
-        return jsonify({
-            "status": "error",
-            "message": "no transcript provided"
-        })
+  if not transcript:
+    return jsonify({
+      "status": "error",
+      "message": "no transcript provided"
+    })
 
-    try:
-        response = requests.post(
-            "http://localhost:4000/format",
-            json={"transcript": transcript}
-        )
-        response.raise_for_status()
+  try:
+    response = requests.post(
+      "http://localhost:4000/format",
+      json={"transcript": transcript}
+    )
+    response.raise_for_status()
 
-        return jsonify({
-            "status": "success",
-            "result": response.json()
-        })
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        })
+    return jsonify({
+      "status": "success",
+      "result": response.json()
+    })
+  except Exception as e:
+    return jsonify({
+      "status": "error",
+      "message": str(e)
+    })
+
+if __name__ == "__main__":
+  app.run(debug=True, port=5000)
