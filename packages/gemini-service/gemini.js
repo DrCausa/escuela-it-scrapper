@@ -13,11 +13,6 @@ export async function formatTranscript(text) {
       Eres un asistente experto en organización de transcripciones de video.
       Tu única tarea es devolver el contenido procesado, nunca expliques ni añadas comentarios.
 
-      Instrucciones:
-      1. Lee el siguiente texto:
-      ---
-      ${text}
-      ---
       2. Reestructura la transcripción de forma clara, siguiendo este formato:
         - Un *título principal* que resuma el contenido del video.
         - División en *temas principales*.
@@ -35,7 +30,6 @@ export async function formatTranscript(text) {
           - Tema 1: 00:00:00 -> 00:35:20
           - Tema 2: 00:35:21 -> 01:20:10
           - Tema 3: 01:20:11 -> 02:00:00
-  
 `;
 
     const result = await model.generateContent(prompt);

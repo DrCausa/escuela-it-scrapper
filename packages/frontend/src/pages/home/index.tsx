@@ -159,16 +159,20 @@ const HomePage = () => {
             layoutClassName="mb-4"
             disabled={isLoading}
           />
-          {/* <Input
+
+
+          <Input
             type="checkbox"
-            label="Include timestamps"
+            label="Include timestamps with Gemini"
             checked={isChecked}
             onChange={() => setIsChecked(!isChecked)}
             layoutClassName="mb-4 justify-start"
             labelCheckboxClassName="order-2"
             checkboxClassName="order-1"
             disabled={isLoading}
-          /> */}
+          /> 
+
+
           <div className="flex flex-col items-end gap-2 mb-4">
             <span className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
               Available formats
