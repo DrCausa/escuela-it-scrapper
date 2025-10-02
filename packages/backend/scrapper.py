@@ -5,7 +5,13 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException,
 def get_src_url(url, timeout = 10):
   driver = None
   try:
-    driver = webdriver.Chrome()
+    options = webdriver.ChromeOptions()
+    options.add_argument(r"--user-data-dir=C:\selenium-profile")
+    options.add_argument("--profile-directory=Default")
+    options.add_argument("--restore-last-session=false")
+    options.add_argument("--no-first-run")
+    driver = webdriver.Chrome(options=options)
+    driver.maximize_window()
     driver.implicitly_wait(timeout)
     driver.get(url)
 
