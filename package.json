@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "pip-install": "pnpm --filter ./packages/backend run pip-install",
+    "pip-install": "pnpm --filter backend run pip-install",
     "install:all": "pnpm install && pnpm run pip-install",
     "dev": "pnpm --parallel --filter ./packages/* run dev",
     "dev:frontend": "pnpm --filter ./packages/frontend run dev",
