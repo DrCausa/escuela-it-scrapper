@@ -32,7 +32,7 @@ const HomePage = () => {
   const [url, setUrl] = useState("");
   const [isChecked, setIsChecked] = useState(false);
   const [selTxt, setSelTxt] = useState(true);
-  const [selSrt, setSelSrt] = useState(false);
+  const [selSrt, setSelSrt] = useState(true);
 
   const handleClick = async () => {
     setIsLoading(true);
@@ -169,17 +169,17 @@ const HomePage = () => {
             checkboxClassName="order-1"
             disabled={isLoading}
           /> */}
-          <div className="flex flex-col gap-2 mb-4">
-            <span className="text-sm text-text-secondary-light dark:text-text-secondary-dark">Select formats</span>
-            <div className="flex gap-6">
+          <div className="flex flex-col items-end gap-2 mb-4">
+            <span className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+              Available formats
+            </span>
+            <div className="flex flex-col gap-2">
               <Input
                 type="checkbox"
                 label="TXT"
                 checked={selTxt}
                 onChange={() => setSelTxt(!selTxt)}
                 layoutClassName="justify-start"
-                labelCheckboxClassName="order-2"
-                checkboxClassName="order-1"
                 disabled={isLoading}
               />
               <Input
@@ -188,8 +188,6 @@ const HomePage = () => {
                 checked={selSrt}
                 onChange={() => setSelSrt(!selSrt)}
                 layoutClassName="justify-start"
-                labelCheckboxClassName="order-2"
-                checkboxClassName="order-1"
                 disabled={isLoading}
               />
             </div>
@@ -202,7 +200,8 @@ const HomePage = () => {
               fontWeight: "400",
             }}
             disabled={
-              (currStatus !== AppStatus.READY && currStatus !== AppStatus.SUCCESS) ||
+              (currStatus !== AppStatus.READY &&
+                currStatus !== AppStatus.SUCCESS) ||
               !(selTxt || selSrt || isChecked)
             }
             isLoading={isLoading}
