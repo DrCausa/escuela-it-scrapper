@@ -1,23 +1,23 @@
 import Button from "@components/commons/Button";
 import Icon from "@components/commons/Icon";
 import { usePageTitle } from "@hooks/usePageTitle";
-import { getData } from "@services/api/controllers/dataManager";
-import type { DataType } from "@services/api/types/DataType";
+import { getHistory } from "@services/api/controllers/historyController";
 import { downloadFile } from "@utils/downloadFile";
 import { formatDate } from "@utils/formatDate";
 import { getFileSize } from "@utils/getFileSize";
 import { useEffect, useState } from "react";
+import type { Data, DataRow } from "@/services/api/types";
 
 const HistoryPage = () => {
   usePageTitle("Results");
-  const [allData, setAllData] = useState<DataType[]>([]);
+  const [allData, setAllData] = useState<Data>([]);
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await getData();
-      if (data.status === "success") {
-        setAllData(data.result);
-      }
+      const response = await getHistory();
+      console.log(response);
+
+      setAllData(response as Data);
     };
 
     fetchData();
@@ -50,7 +50,7 @@ const HistoryPage = () => {
             allData
               .slice()
               .reverse()
-              .map((data: DataType) => (
+              .map((data: DataRow) => (
                 <tr
                   key={data.id}
                   className="*:border-border-strong-light *:dark:border-border-strong-dark *:border-b *:px-4 *:py-2 *:whitespace-nowrap *:truncate"
