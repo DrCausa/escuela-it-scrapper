@@ -1,16 +1,22 @@
-from flask import Blueprint, request, jsonify, Response
+from flask import Blueprint, jsonify, Response
 from utils.middlewares import require_json_value
 from utils.json_utils import get_json, ovewrite_json
 from typing import Any
+import os
 
 
 data_pb = Blueprint("data", __name__)
+HISTORY_FOLDER = os.path.join("history")
 
 
 @data_pb.route("/add-to-history", methods=["POST"])
 @require_json_value
 def add_to_history(value: Any) -> Response:
-  file_path = "history/data.json"
+  file_path = os.path.join(HISTORY_FOLDER, "data.json")
+
+  if not os.path.exists(HISTORY_FOLDER):
+    os.makedirs(HISTORY_FOLDER, exist_ok=True)
+
   new_data = get_json(file_path) or []
   new_data.append(value)
 
@@ -28,9 +34,9 @@ def add_to_history(value: Any) -> Response:
 
 @data_pb.route("/get-history", methods=["GET"])
 def get_history() -> Response:
-  file_path = "history/data.json"
-  data = get_json(file_path) or []
+  file_path = os.path.join(HISTORY_FOLDER, "data.json")
 
+  data = get_json(file_path) or []
   if data:
     return jsonify(data), 200
   

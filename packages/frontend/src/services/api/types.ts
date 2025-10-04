@@ -2,7 +2,7 @@ export type ResultResponse =
   | {
       status: string;
       message: string;
-      result?: string | boolean | Data;
+      result?: string | boolean | Data | Blob;
     }
   | {
       status: string;
@@ -12,9 +12,10 @@ export type ResultResponse =
 
 export type DataRow = {
   id: string;
-  fileName: string;
-  generatedAt: number;
-  content: string;
+  file_name: string;
+  generated_at: number;
+  content?: string;
+  is_audio?: boolean;
 };
 
 export type Data = DataRow[];

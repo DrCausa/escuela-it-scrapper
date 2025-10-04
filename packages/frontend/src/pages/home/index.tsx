@@ -4,9 +4,12 @@ import Icon from "@components/commons/Icon";
 import { useNotify } from "@contexts/NotificationContext";
 import { useTheme } from "@hooks/useTheme";
 import {
+  generateVttContent,
+  getM3u8Url,
   getTexttrackUrl,
   getVttContent,
   isValidEscuelaITUrl,
+  saveAudioUsingM358Url,
   vvtToPlainText,
 } from "@services/api/controllers/scrapingController";
 import { flattenClasses } from "@utils/classNames";
@@ -16,17 +19,25 @@ import { useState } from "react";
 import { playSound } from "@utils/playSound";
 import type { Data, DataRow, ResultResponse } from "@services/api/types";
 import { addToHistory } from "@services/api/controllers/historyController";
+import { formateDateForFileName } from "@/utils/formatDate";
 
 const AppStatus = {
   IDLE: "Waiting for URL...",
   READY: "Ready to scrape!",
   LOADING_PROFILE: "Loading user profile...",
   GETTING_TEXT_TRACK_URL: "Getting text track URL...",
-  GETTING_VTT_CONTENT: "Getting VTT content...",
+  GETTING_AUDIO_M3U8_URL: "Getting audio m3u8 URL...",
+  GETTING_CLASS_AUDIO: "Getting class audio in .m4a format...",
+  GETTING_VTT_CONTENT: "Getting existing VTT content...",
+  GENERATING_VTT_CONTENT: "Generating new VTT content...",
   CONVERTING_TO_PLAIN_TEXT: "Converting to plain text...",
   SAVING_TO_HISTORY: "Saving to history...",
   SUCCESS: "Scraping completed successfully!",
   ERROR_WHILE_SAVING: "Error while saving to history!",
+  ERROR_WHILE_GETTING_AUDIO: "Error while getting audio!",
+  ERROR_WHILE_GENERATING_VTT: "Error while generating new VTT content!",
+  ERROR_WHILE_GETTING_URLS:
+    "An error occurred while trying to get the resource URLs!",
   ERROR: "An error occurred...",
   INVALID_URL: "The provided URL is not valid!",
 } as const;
@@ -43,31 +54,105 @@ const HomePage = () => {
   const [url, setUrl] = useState("");
   const [checkboxVttContent, setIncludeVttContent] = useState(true);
   const [checkboxPlainText, setCheckboxPlainText] = useState(true);
+  const [checkboxAudio, setCheckboxAudio] = useState(false);
 
   const handleClick = async () => {
     setCurrStatus(AppStatus.LOADING_PROFILE);
     setAppIsWaiting(true);
 
+    let response: ResultResponse | undefined;
+    let texttrackUrl = "",
+      m3u8Url = "",
+      vttContent = "",
+      plainText = "",
+      audioFileName = "";
+    let newData: Data = [];
+    let hasTexttrackUrl = false;
+    let hasM3u8Url = false;
+
     try {
-      let response: ResultResponse;
-      let texttrackUrl, vttContent, plainText;
-      let newData: Data = [];
+      if (checkboxPlainText || checkboxVttContent) {
+        setCurrStatus(AppStatus.GETTING_TEXT_TRACK_URL);
+        response = await getTexttrackUrl(url);
+        hasTexttrackUrl = true;
+        texttrackUrl = `${response.result}`;
+      }
+    } catch (err) {}
 
-      setCurrStatus(AppStatus.GETTING_TEXT_TRACK_URL);
-      response = await getTexttrackUrl(url);
+    try {
+      if (checkboxAudio || !hasTexttrackUrl) {
+        setCurrStatus(AppStatus.GETTING_AUDIO_M3U8_URL);
+        response = await getM3u8Url(url);
+        hasM3u8Url = true;
+        m3u8Url = `${response.result}`;
+      }
+    } catch (err) {}
 
+    if (response === undefined || (!hasTexttrackUrl && !hasM3u8Url)) {
+      setCurrStatus(AppStatus.ERROR_WHILE_GETTING_URLS);
+      setAppIsWaiting(false);
+      throw new Error("Unknown error");
+    }
+
+    if (response.status === "error" || !response.result) {
+      setCurrStatus(AppStatus.ERROR);
+      setAppIsWaiting(false);
+      throw new Error(response.message);
+    }
+
+    if (hasTexttrackUrl && (checkboxVttContent || checkboxPlainText)) {
+      setCurrStatus(AppStatus.GETTING_VTT_CONTENT);
+      response = await getVttContent(texttrackUrl);
       if (response.status === "error" || !response.result) {
         setCurrStatus(AppStatus.ERROR);
         setAppIsWaiting(false);
         throw new Error(response.message || "Unknown error");
       }
-      texttrackUrl = `${response.result}`;
+      vttContent = `${response.result}`;
 
-      if (checkboxPlainText || (checkboxVttContent && texttrackUrl)) {
-        setCurrStatus(AppStatus.GETTING_VTT_CONTENT);
-        response = await getVttContent(texttrackUrl);
+      if (checkboxVttContent) {
+        const now = Date.now();
+        const id = crypto.randomUUID();
+
+        const newRow: DataRow = {
+          id: id,
+          file_name: `${id}-${formateDateForFileName(now)}.srt`,
+          content: vttContent,
+          generated_at: now,
+        };
+        newData.push(newRow);
+      }
+    }
+
+    if ((!hasTexttrackUrl && hasM3u8Url) || (checkboxAudio && hasM3u8Url)) {
+      const now = Date.now();
+      const id = crypto.randomUUID();
+      const fileName = `${id}-${formateDateForFileName(now)}`;
+
+      setCurrStatus(AppStatus.GETTING_CLASS_AUDIO);
+      response = await saveAudioUsingM358Url(m3u8Url, fileName);
+      if (response.status === "error" || !response.result) {
+        setCurrStatus(AppStatus.ERROR_WHILE_GETTING_AUDIO);
+        setAppIsWaiting(false);
+        throw new Error(response.message || "Unknown error");
+      }
+      audioFileName = `${response.result}`;
+
+      if (checkboxAudio) {
+        const newRow: DataRow = {
+          id: id,
+          file_name: audioFileName,
+          generated_at: now,
+          is_audio: true,
+        };
+        newData.push(newRow);
+      }
+
+      if (!hasTexttrackUrl && (checkboxVttContent || checkboxPlainText)) {
+        setCurrStatus(AppStatus.GENERATING_VTT_CONTENT);
+        response = await generateVttContent(audioFileName);
         if (response.status === "error" || !response.result) {
-          setCurrStatus(AppStatus.ERROR);
+          setCurrStatus(AppStatus.ERROR_WHILE_GENERATING_VTT);
           console.log(response);
           setAppIsWaiting(false);
           throw new Error(response.message || "Unknown error");
@@ -80,63 +165,59 @@ const HomePage = () => {
 
           const newRow: DataRow = {
             id: id,
-            fileName: `${id}-${now}.srt`,
+            file_name: `${id}-${formateDateForFileName(now)}.srt`,
             content: vttContent,
-            generatedAt: now,
+            generated_at: now,
           };
           newData.push(newRow);
         }
       }
-
-      if (checkboxPlainText && vttContent) {
-        setCurrStatus(AppStatus.CONVERTING_TO_PLAIN_TEXT);
-        response = await vvtToPlainText(vttContent);
-        if (response.status === "error" || !response.result) {
-          setCurrStatus(AppStatus.ERROR);
-          console.log(response);
-          setAppIsWaiting(false);
-          throw new Error(response.message || "Unknown error");
-        }
-        plainText = `${response.result}`;
-
-        const now = Date.now();
-        const id = crypto.randomUUID();
-        const newRow: DataRow = {
-          id: id,
-          fileName: `${id}-${now}.txt`,
-          content: plainText,
-          generatedAt: now,
-        };
-        newData.push(newRow);
-      }
-
-      if (newData && newData.length > 0) {
-        setCurrStatus(AppStatus.SAVING_TO_HISTORY);
-
-        try {
-          for (const row of newData) {
-            const response = await addToHistory(row);
-            if (response.status !== "success") {
-              setCurrStatus(AppStatus.ERROR_WHILE_SAVING);
-              setAppIsWaiting(false);
-              return;
-            }
-          }
-          setCurrStatus(AppStatus.READY);
-        } catch (err) {
-          setCurrStatus(AppStatus.ERROR_WHILE_SAVING);
-        }
-      }
-
-      setNotify("/history", true);
-      setAppIsWaiting(false);
-      setCurrStatus(AppStatus.SUCCESS);
-      playSound("mp3");
-    } catch (err) {
-      setCurrStatus(AppStatus.ERROR);
-      console.log(err);
-      setAppIsWaiting(false);
     }
+
+    if (checkboxPlainText && vttContent) {
+      setCurrStatus(AppStatus.CONVERTING_TO_PLAIN_TEXT);
+      response = await vvtToPlainText(vttContent);
+      if (response.status === "error" || !response.result) {
+        setCurrStatus(AppStatus.ERROR);
+        console.log(response);
+        setAppIsWaiting(false);
+        throw new Error(response.message || "Unknown error");
+      }
+      plainText = `${response.result}`;
+
+      const now = Date.now();
+      const id = crypto.randomUUID();
+      const newRow: DataRow = {
+        id: id,
+        file_name: `${id}-${formateDateForFileName(now)}.txt`,
+        content: plainText,
+        generated_at: now,
+      };
+      newData.push(newRow);
+    }
+
+    if (newData && newData.length > 0) {
+      setCurrStatus(AppStatus.SAVING_TO_HISTORY);
+
+      try {
+        for (const row of newData) {
+          const response = await addToHistory(row);
+          if (response.status !== "success") {
+            setCurrStatus(AppStatus.ERROR_WHILE_SAVING);
+            setAppIsWaiting(false);
+            return;
+          }
+        }
+        setCurrStatus(AppStatus.READY);
+      } catch (err) {
+        setCurrStatus(AppStatus.ERROR_WHILE_SAVING);
+      }
+    }
+
+    setNotify("/history", true);
+    setAppIsWaiting(false);
+    setCurrStatus(AppStatus.SUCCESS);
+    playSound("mp3");
   };
 
   const changeURL = async (newUrl: string) => {
@@ -162,7 +243,7 @@ const HomePage = () => {
     <div className="flex flex-col">
       <Card className="w-[32rem] mx-auto mt-15 flex flex-col">
         <h5 className="text-center text-[32px] mb-4">EscuelaIT Scrapper</h5>
-        <div className="flex flex-col items-center mb-8 text-sm text-text-secondary-light dark:text-text-secondary-dark">
+        <div className="flex flex-col items-center mb-4 text-sm text-text-secondary-light dark:text-text-secondary-dark">
           Provide a Content URL in this format:
           <code>
             https://escuela.it/cursos/
@@ -170,6 +251,15 @@ const HomePage = () => {
             /clase/
             <span className="text-btn-warning-bg-hover">[CONTENT]</span>
           </code>
+          <div className="mt-4 text-xs text-center text-text-tertiary-light dark:text-text-tertiary-dark max-w-[40rem]">
+            <strong className="text-btn-danger-bg">IMPORTANT:</strong> If the
+            provided course does not include an existing transcript, a new one
+            will be generated. This process{" "}
+            <strong>
+              <u>may consume additional resources</u>
+            </strong>{" "}
+            and increase the total processing time.
+          </div>
         </div>
         <form
           onSubmit={(e) => {
@@ -201,6 +291,13 @@ const HomePage = () => {
               onChange={() => setCheckboxPlainText(!checkboxPlainText)}
               disabled={appIsWaiting}
             />
+            <Input
+              type="checkbox"
+              label="Class Audio (.m4a)"
+              checked={checkboxAudio}
+              onChange={() => setCheckboxAudio(!checkboxAudio)}
+              disabled={appIsWaiting}
+            />
           </div>
           <Button
             buttonType="secondary"
@@ -213,7 +310,7 @@ const HomePage = () => {
               (currStatus !== AppStatus.READY &&
                 currStatus !== AppStatus.SUCCESS) ||
               appIsWaiting ||
-              (!checkboxVttContent && !checkboxPlainText)
+              (!checkboxVttContent && !checkboxPlainText && !checkboxAudio)
             }
             isLoading={appIsWaiting}
           >
@@ -222,7 +319,7 @@ const HomePage = () => {
           </Button>
         </form>
       </Card>
-      <code className="text-base w-full text-center my-4 text-text-tertiary-light dark:text-text-tertiary-dark">
+      <code className="text-base w-full text-center my-4 mb-16 text-text-tertiary-light dark:text-text-tertiary-dark">
         &lt;{" "}
         <span
           className={flattenClasses(`

@@ -28,10 +28,7 @@ def get_vtt_content(url: str) -> Response:
 
 @transcripts_bp.route("/vvt-to-plain-text", methods=["POST"])
 @require_vtt_value
-def vvt_to_plain_text(url: str) -> Response:
-  data = request.get_json(silent=True) or {}
-  value = data.get("value")
-
+def vvt_to_plain_text(value: str) -> Response:
   plain_value = flatten_text(value)
   return jsonify({
     "status": "success",
