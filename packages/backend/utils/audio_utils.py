@@ -30,7 +30,7 @@ def get_saved_audio(audio_path: str) -> Any:
     return None
 
 
-def generate_vtt_from_audio(file_path: str, model_size: str = "small") -> str | None:
+def generate_vtt_from_audio(file_path: str, model_size: str = "tiny") -> str | None:
   try:
     model = WhisperModel(model_size, device="auto", compute_type="int8")
 
