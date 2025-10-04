@@ -243,7 +243,7 @@ const HomePage = () => {
     <div className="flex flex-col">
       <Card className="w-[32rem] mx-auto mt-15 flex flex-col">
         <h5 className="text-center text-[32px] mb-4">EscuelaIT Scrapper</h5>
-        <div className="flex flex-col items-center mb-8 text-sm text-text-secondary-light dark:text-text-secondary-dark">
+        <div className="flex flex-col items-center mb-4 text-sm text-text-secondary-light dark:text-text-secondary-dark">
           Provide a Content URL in this format:
           <code>
             https://escuela.it/cursos/
@@ -251,6 +251,15 @@ const HomePage = () => {
             /clase/
             <span className="text-btn-warning-bg-hover">[CONTENT]</span>
           </code>
+          <div className="mt-4 text-xs text-center text-text-tertiary-light dark:text-text-tertiary-dark max-w-[40rem]">
+            <strong className="text-btn-danger-bg">IMPORTANT:</strong> If the
+            provided course does not include an existing transcript, a new one
+            will be generated. This process{" "}
+            <strong>
+              <u>may consume additional resources</u>
+            </strong>{" "}
+            and increase the total processing time.
+          </div>
         </div>
         <form
           onSubmit={(e) => {
@@ -310,7 +319,7 @@ const HomePage = () => {
           </Button>
         </form>
       </Card>
-      <code className="text-base w-full text-center my-4 text-text-tertiary-light dark:text-text-tertiary-dark">
+      <code className="text-base w-full text-center my-4 mb-16 text-text-tertiary-light dark:text-text-tertiary-dark">
         &lt;{" "}
         <span
           className={flattenClasses(`

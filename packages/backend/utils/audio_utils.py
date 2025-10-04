@@ -5,7 +5,13 @@ from flask import send_file
 from typing import Any
 
 
+AUDIO_FOLDER = os.path.join("history", "audios")
+
+
 def save_audio_using_m3u8_url(m3u8_url: str, filename: str):
+  if not os.path.exists(AUDIO_FOLDER):
+    os.makedirs(AUDIO_FOLDER, exist_ok=True)
+
   (
     ffmpeg
     .input(m3u8_url)
