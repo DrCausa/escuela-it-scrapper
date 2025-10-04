@@ -2,26 +2,44 @@ import Button from "@components/commons/Button";
 import Icon from "@components/commons/Icon";
 import { usePageTitle } from "@hooks/usePageTitle";
 import { getHistory } from "@services/api/controllers/historyController";
-import { downloadFile } from "@utils/downloadFile";
+import { downloadAudioFile, downloadFile } from "@utils/downloadFile";
 import { formatDate } from "@utils/formatDate";
-import { getFileSize } from "@utils/getFileSize";
+import { getAudioFileSize, getFileSize } from "@utils/getFileSize";
 import { useEffect, useState } from "react";
 import type { Data, DataRow } from "@/services/api/types";
+import { downloadSavedAudio } from "@/services/api/controllers/scrapingController";
 
 const HistoryPage = () => {
   usePageTitle("Results");
   const [allData, setAllData] = useState<Data>([]);
+  const [audioBlobs, setAudioBlobs] = useState<Record<string, Blob>>({});
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await getHistory();
-      console.log(response);
-
-      setAllData(response as Data);
+      const response = (await getHistory()) as Data;
+      setAllData(response);
+      for (const row of response) {
+        if (row.is_audio) {
+          const blob = (await downloadSavedAudio(row.file_name)) as Blob;
+          setAudioBlobs((prev) => ({ ...prev, [row.file_name]: blob }));
+        }
+      }
     };
-
     fetchData();
   }, []);
+
+  const handleDownload = async (data: DataRow) => {
+    if (data.is_audio) {
+      let blob = audioBlobs[data.file_name];
+      if (!blob) {
+        blob = (await downloadSavedAudio(data.file_name)) as Blob;
+        setAudioBlobs((prev) => ({ ...prev, [data.file_name]: blob }));
+      }
+      downloadAudioFile(data.file_name, blob);
+    } else {
+      downloadFile(data.file_name, data.content ?? "");
+    }
+  };
 
   return (
     <div className="w-[60rem] mx-auto my-10">
@@ -50,46 +68,62 @@ const HistoryPage = () => {
             allData
               .slice()
               .reverse()
-              .map((data: DataRow) => (
-                <tr
-                  key={data.id}
-                  className="*:border-border-strong-light *:dark:border-border-strong-dark *:border-b *:px-4 *:py-2 *:whitespace-nowrap *:truncate"
-                >
-                  <td className="max-w-[10rem] w-[10rem]" title={data.id}>
-                    {data.id}
-                  </td>
-                  <td className="max-w-[20rem] w-[20rem]" title={data.fileName}>
-                    {data.fileName}
-                  </td>
-                  <td className="max-w-[5rem] w-[5rem]">
-                    {getFileSize(data.content)}
-                  </td>
-                  <td className="max-w-[15rem] w-[15rem]">
-                    {formatDate(data.generatedAt)}
-                  </td>
-                  <td className="max-w-[10rem] w-[10rem]">
-                    <div className="flex justify-between">
-                      <Button
-                        onClick={() =>
-                          downloadFile(data.fileName, data.content)
-                        }
-                        className="flex"
-                        buttonType="success"
-                        isOutline={true}
-                      >
-                        <Icon iconName="download" />
-                      </Button>
-                      <Button
-                        className="flex"
-                        buttonType="danger"
-                        isOutline={true}
-                      >
-                        <Icon iconName="delete_forever" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+              .map((data: DataRow) => {
+                const blob = audioBlobs[data.file_name];
+                const fileSize = data.is_audio ? (
+                  blob ? (
+                    getAudioFileSize(blob.size)
+                  ) : (
+                    <Icon
+                      iconName="progress_activity"
+                      className="animate-spin"
+                    />
+                  )
+                ) : (
+                  getFileSize(data.content ?? "")
+                );
+
+                return (
+                  <tr
+                    key={data.id}
+                    className="*:border-border-strong-light *:dark:border-border-strong-dark *:border-b *:px-4 *:py-2 *:whitespace-nowrap *:truncate"
+                  >
+                    <td className="max-w-[10rem] w-[10rem]" title={data.id}>
+                      {data.id}
+                    </td>
+                    <td
+                      className="max-w-[20rem] w-[20rem]"
+                      style={{ direction: "rtl" }}
+                      title={data.file_name}
+                    >
+                      {data.file_name}
+                    </td>
+                    <td className="max-w-[5rem] w-[5rem]">{fileSize}</td>
+                    <td className="max-w-[15rem] w-[15rem]">
+                      {formatDate(data.generated_at)}
+                    </td>
+                    <td className="max-w-[10rem] w-[10rem]">
+                      <div className="flex justify-between">
+                        <Button
+                          onClick={() => handleDownload(data)}
+                          className="flex"
+                          buttonType="success"
+                          isOutline={true}
+                        >
+                          <Icon iconName="download" />
+                        </Button>
+                        <Button
+                          className="flex"
+                          buttonType="danger"
+                          isOutline={true}
+                        >
+                          <Icon iconName="delete_forever" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
           ) : (
             <tr>
               <td colSpan={5}>

@@ -60,11 +60,35 @@ def require_value(f):
   return decorated_function
 
 
+def require_values(fields=None):
+  fields = fields or []
+
+  def decorator(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+      data = request.get_json(silent=True)
+      if not data or not isinstance(data, dict):
+        return jsonify({
+          "status": "error",
+          "message": "The body must be a valid JSON"
+        }), 400
+      
+      missing_fields = [field for field in fields if field not in data]
+      if missing_fields:
+        return jsonify({
+          "status": "error",
+          "message": f"Required fields are missing: {', '.join(missing_fields)}"
+        }), 400
+      return f(data, *args, **kwargs)
+    return decorated_function
+  return decorator
+
+
 def require_vtt_value(f):
   @wraps(f)
   @require_value
   def decorated_function(value, *args, **kwargs):
-    pattern = r'^WEBVTT\s\n(\d+\n\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}\s.+\n*)+$'
+    pattern = r'(WEBVTT\s\n)?(\d+\n\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}\s.+\n*)+'
     if not fullmatch(pattern, value):
       return jsonify({
         "status": "error",
