@@ -20,6 +20,7 @@ import { playSound } from "@utils/playSound";
 import type { Data, DataRow, ResultResponse } from "@services/api/types";
 import { addToHistory } from "@services/api/controllers/historyController";
 import { formateDateForFileName } from "@/utils/formatDate";
+import Tooltip from "@/components/commons/Tooltip";
 
 const AppStatus = {
   IDLE: "Waiting for URL...",
@@ -55,6 +56,7 @@ const HomePage = () => {
   const [checkboxVttContent, setIncludeVttContent] = useState(true);
   const [checkboxPlainText, setCheckboxPlainText] = useState(true);
   const [checkboxAudio, setCheckboxAudio] = useState(false);
+  const [checkboxForceVttContent, setCheckboxForceVttContent] = useState(false);
 
   const handleClick = async () => {
     setCurrStatus(AppStatus.LOADING_PROFILE);
@@ -80,7 +82,7 @@ const HomePage = () => {
     } catch (err) {}
 
     try {
-      if (checkboxAudio || !hasTexttrackUrl) {
+      if ((checkboxAudio || !hasTexttrackUrl) && checkboxForceVttContent) {
         setCurrStatus(AppStatus.GETTING_AUDIO_M3U8_URL);
         response = await getM3u8Url(url);
         hasM3u8Url = true;
@@ -91,16 +93,19 @@ const HomePage = () => {
     if (response === undefined || (!hasTexttrackUrl && !hasM3u8Url)) {
       setCurrStatus(AppStatus.ERROR_WHILE_GETTING_URLS);
       setAppIsWaiting(false);
-      throw new Error("Unknown error");
+      return;
     }
 
     if (response.status === "error" || !response.result) {
       setCurrStatus(AppStatus.ERROR);
       setAppIsWaiting(false);
-      throw new Error(response.message);
+      return;
     }
 
-    if (hasTexttrackUrl && (checkboxVttContent || checkboxPlainText)) {
+    if (
+      (hasTexttrackUrl && (checkboxVttContent || checkboxPlainText)) ||
+      checkboxForceVttContent
+    ) {
       setCurrStatus(AppStatus.GETTING_VTT_CONTENT);
       response = await getVttContent(texttrackUrl);
       if (response.status === "error" || !response.result) {
@@ -124,7 +129,11 @@ const HomePage = () => {
       }
     }
 
-    if ((!hasTexttrackUrl && hasM3u8Url) || (checkboxAudio && hasM3u8Url)) {
+    if (
+      (!hasTexttrackUrl && hasM3u8Url) ||
+      (checkboxAudio && hasM3u8Url) ||
+      (checkboxForceVttContent && hasM3u8Url)
+    ) {
       const now = Date.now();
       const id = crypto.randomUUID();
       const fileName = `${id}-${formateDateForFileName(now)}`;
@@ -247,19 +256,21 @@ const HomePage = () => {
           Provide a Content URL in this format:
           <code>
             https://escuela.it/cursos/
-            <span className="text-btn-warning-bg-hover">[COURSE]</span>
+            <span className="text-btn-primary-bg">[COURSE]</span>
             /clase/
-            <span className="text-btn-warning-bg-hover">[CONTENT]</span>
+            <span className="text-btn-primary-bg">[CONTENT]</span>
           </code>
-          <div className="mt-4 text-xs text-center text-text-tertiary-light dark:text-text-tertiary-dark max-w-[40rem]">
-            <strong className="text-btn-danger-bg">IMPORTANT:</strong> If the
-            provided course does not include an existing transcript, a new one
-            will be generated. This process{" "}
-            <strong>
-              <u>may consume additional resources</u>
-            </strong>{" "}
-            and increase the total processing time.
-          </div>
+          {checkboxForceVttContent && (
+            <div className="mt-4 text-xs text-center text-text-tertiary-light dark:text-text-tertiary-dark max-w-[40rem]">
+              <strong className="text-btn-danger-bg">IMPORTANT:</strong> If the
+              provided course does not include an existing transcript, a new one
+              will be generated. This process{" "}
+              <u className="text-btn-warning-bg-hover dark:text-btn-warning-bg/90">
+                may consume additional resources
+              </u>{" "}
+              and increase the total processing time.
+            </div>
+          )}
         </div>
         <form
           onSubmit={(e) => {
@@ -276,28 +287,61 @@ const HomePage = () => {
             layoutClassName="mb-4"
             disabled={appIsWaiting}
           />
-          <div className="flex flex-col gap-4 mb-4">
-            <Input
-              type="checkbox"
-              label="SubRip Subtitle (.srt)"
-              checked={checkboxVttContent}
-              onChange={() => setIncludeVttContent(!checkboxVttContent)}
-              disabled={appIsWaiting}
-            />
-            <Input
-              type="checkbox"
-              label="Plain Text (.txt)"
-              checked={checkboxPlainText}
-              onChange={() => setCheckboxPlainText(!checkboxPlainText)}
-              disabled={appIsWaiting}
-            />
-            <Input
-              type="checkbox"
-              label="Class Audio (.m4a)"
-              checked={checkboxAudio}
-              onChange={() => setCheckboxAudio(!checkboxAudio)}
-              disabled={appIsWaiting}
-            />
+          <div className="flex flex-row items-start justify-start mb-4">
+            <div className="w-[50%] flex flex-col items-end">
+              <span className="mb-2 underline underline-offset-2 text-text-secondary-light dark:text-text-secondary-dark">
+                Formats
+              </span>
+              <Input
+                type="checkbox"
+                label="SubRip Subtitle (.srt)"
+                checked={checkboxVttContent}
+                onChange={() => setIncludeVttContent(!checkboxVttContent)}
+                disabled={appIsWaiting}
+                layoutClassName="mb-2"
+              />
+              <Input
+                type="checkbox"
+                label="Plain Text (.txt)"
+                checked={checkboxPlainText}
+                onChange={() => setCheckboxPlainText(!checkboxPlainText)}
+                disabled={appIsWaiting}
+                layoutClassName="mb-2"
+              />
+              <Input
+                type="checkbox"
+                label="Class Audio (.m4a)"
+                checked={checkboxAudio}
+                onChange={() => setCheckboxAudio(!checkboxAudio)}
+                disabled={appIsWaiting}
+                layoutClassName="mb-2"
+              />
+            </div>
+            <div className="w-[50%] flex flex-col items-end">
+              <div className="relative flex items-center mb-2">
+                <Tooltip message="Recommended only if you have a modern Nvidia GPU">
+                  <div className="peer flex relative me-2">
+                    <Icon
+                      iconName="info"
+                      className="text-btn-warning-bg/90 pointer-events-auto animate-pulse"
+                    />
+                    <div className="absolute w-full h-full bg-btn-warning-bg-hover/25 rounded-full animate-ping pointer-events-none"></div>
+                  </div>
+                </Tooltip>
+                <span className="text-btn-warning-bg-hover dark:text-btn-warning-bg/90 underline underline-offset-2">
+                  Experimental
+                </span>
+              </div>
+              <Input
+                type="checkbox"
+                label="Autogenerate Content"
+                checked={checkboxForceVttContent}
+                onChange={() =>
+                  setCheckboxForceVttContent(!checkboxForceVttContent)
+                }
+                disabled={appIsWaiting}
+              />
+            </div>
           </div>
           <Button
             buttonType="secondary"
@@ -340,7 +384,8 @@ const HomePage = () => {
             ${
               currStatus === AppStatus.INVALID_URL ||
               currStatus === AppStatus.ERROR ||
-              currStatus === AppStatus.ERROR_WHILE_SAVING
+              currStatus === AppStatus.ERROR_WHILE_SAVING ||
+              currStatus === AppStatus.ERROR_WHILE_GETTING_URLS
                 ? "text-btn-danger-bg"
                 : ""
             }

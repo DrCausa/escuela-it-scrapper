@@ -1,3 +1,5 @@
+import type { HTMLAttributes } from "react";
+
 export type ICON_TYPE = "OUTLINED" | "ROUNDED" | "SHARP";
 
 type IconProps = {
@@ -5,7 +7,7 @@ type IconProps = {
   iconType?: ICON_TYPE;
   isFilled?: boolean;
   className?: string;
-};
+} & Omit<HTMLAttributes<HTMLButtonElement>, "className" | "children">;
 
 const Icon = ({
   iconName,
