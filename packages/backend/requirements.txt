@@ -3,3 +3,4 @@ flask
 flask-cors
 selenium
 faster-whisper
+ffmpeg-python
