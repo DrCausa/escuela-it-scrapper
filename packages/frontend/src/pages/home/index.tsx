@@ -22,41 +22,118 @@ import { addToHistory } from "@services/api/controllers/historyController";
 import { formateDateForFileName } from "@/utils/formatDate";
 import Tooltip from "@/components/commons/Tooltip";
 
-const AppStatus = {
-  IDLE: "Waiting for URL...",
-  READY: "Ready to scrape!",
-  LOADING_PROFILE: "Loading user profile...",
-  GETTING_TEXT_TRACK_URL: "Getting text track URL...",
-  GETTING_AUDIO_M3U8_URL: "Getting audio m3u8 URL...",
-  GETTING_CLASS_AUDIO: "Getting class audio in .m4a format...",
-  GETTING_VTT_CONTENT: "Getting existing VTT content...",
-  GENERATING_VTT_CONTENT: "Generating new VTT content...",
-  CONVERTING_TO_PLAIN_TEXT: "Converting to plain text...",
-  SAVING_TO_HISTORY: "Saving to history...",
-  SUCCESS: "Scraping completed successfully!",
-  ERROR_WHILE_SAVING: "Error while saving to history!",
-  ERROR_WHILE_GETTING_AUDIO: "Error while getting audio!",
-  ERROR_WHILE_GENERATING_VTT: "Error while generating new VTT content!",
-  ERROR_WHILE_GETTING_URLS:
-    "An error occurred while trying to get the resource URLs!",
-  ERROR: "An error occurred...",
-  INVALID_URL: "The provided URL is not valid!",
+interface AppStatus {
+  message: string;
+  type: string;
+  animation?: string;
+}
+
+const APP_STATUS = {
+  IDLE: {
+    message: "Waiting for URL...",
+    type: "default",
+  },
+  READY_TO_SCRAPE: {
+    message: "Ready to scrape!",
+    type: "primary",
+    animation: "animate-pulse",
+  },
+  LOADING_USER_PROFILE: {
+    message: "Loading user profile...",
+    type: "warning",
+    animation: "animate-pulse",
+  },
+  GETTING_TEXT_TRACK_URL: {
+    message: "Getting text track URL...",
+    type: "warning",
+    animation: "animate-pulse",
+  },
+  GETTING_M3U8_AUDIO_URL: {
+    message: "Getting audio m3u8 URL...",
+    type: "warning",
+    animation: "animate-pulse",
+  },
+  GETTING_CLASS_AUDIO: {
+    message: "Getting class audio in .m4a format...",
+    type: "warning",
+    animation: "animate-pulse",
+  },
+  GETTING_VTT_CONTENT: {
+    message: "Getting existing VTT content...",
+    type: "warning",
+    animation: "animate-pulse",
+  },
+  GENERATING_VTT_CONTENT: {
+    message: "Generating new VTT content...",
+    type: "warning",
+    animation: "animate-pulse",
+  },
+  CONVERTING_TO_PLAIN_TEXT: {
+    message: "Converting to plain text...",
+    type: "warning",
+    animation: "animate-pulse",
+  },
+  SAVING_TO_HISTORY: {
+    message: "Saving to history...",
+    type: "warning",
+    animation: "animate-pulse",
+  },
+  FULL_SCRAPE_SUCCESS: {
+    message: "Scraping completed successfully!",
+    type: "success",
+  },
+  ERROR_WHILE_SAVING: {
+    message: "Error while saving to history!",
+    type: "error",
+  },
+  ERROR_WHILE_GETTING_AUDIO: {
+    message: "Error while getting audio!",
+    type: "error",
+  },
+  ERROR_WHILE_GETTING_VTT_CONTENT: {
+    message: "Error while getting existing VTT content!",
+    type: "error",
+  },
+  ERROR_WHILE_GENERATING_VTT: {
+    message: "Error while generating new VTT content!",
+    type: "error",
+  },
+  ERROR_WHILE_GETTING_URLS: {
+    message: "An error occurred while trying to get the resource URLs!",
+    type: "error",
+  },
+  ERROR_WHILE_CONVERTING_TO_PLAIN_TEXT: {
+    message: "An error occurred while converting to plain text",
+    type: "error",
+  },
+  ERROR_WHILE_GETTING_DATA: {
+    message: "Error while getting data!",
+    type: "error",
+  },
+  GENERIC_ERROR: {
+    message: "An error occurred...",
+    type: "error",
+  },
+  INVALID_PROVIDED_URL: {
+    message: "The provided URL is not valid!",
+    type: "error",
+  },
 } as const;
 
-type AppStatus = (typeof AppStatus)[keyof typeof AppStatus];
+type APP_STATUS = (typeof APP_STATUS)[keyof typeof APP_STATUS];
 
 const HomePage = () => {
   usePageTitle("Home");
   useTheme();
 
   const { setNotify } = useNotify();
-  const [currStatus, setCurrStatus] = useState<AppStatus>(AppStatus.IDLE);
+  const [currStatus, setCurrStatus] = useState<AppStatus>(APP_STATUS.IDLE);
   const [appIsWaiting, setAppIsWaiting] = useState(false);
   const [url, setUrl] = useState("");
-  const [checkboxVttContent, setIncludeVttContent] = useState(true);
-  const [checkboxPlainText, setCheckboxPlainText] = useState(true);
-  const [checkboxAudio, setCheckboxAudio] = useState(false);
-  const [checkboxForceVttContent, setCheckboxForceVttContent] = useState(false);
+  const [addVttContent, setAddVttContent] = useState(true);
+  const [addPlainText, setAddPlainText] = useState(true);
+  const [addAudio, setAddAudio] = useState(false);
+  const [forceVttContent, setForceVttContent] = useState(false);
 
   const getUrlCourse = (): string | any => {
     const match = url.match(/https:\/\/escuela.it\/cursos\/(.+)\/clase\/(.+)/);
@@ -69,197 +146,228 @@ const HomePage = () => {
   };
 
   const handleClick = async () => {
-    setCurrStatus(AppStatus.LOADING_PROFILE);
     setAppIsWaiting(true);
 
-    let response: ResultResponse | undefined;
-    let texttrackUrl = "",
-      m3u8Url = "",
-      vttContent = "",
+    let texttrackUrl = null,
+      m3u8Url = null;
+
+    let vttContent = "",
       plainText = "",
       audioFileName = "";
+
+    let vttGeneratedAt = 0,
+      plainTextGeneratedAt = 0,
+      audioGeneratedAt = 0;
+
     let newData: Data = [];
-    let hasTexttrackUrl = false;
-    let hasM3u8Url = false;
 
-    if (checkboxPlainText || checkboxVttContent) {
-      setCurrStatus(AppStatus.GETTING_TEXT_TRACK_URL);
-      response = await getTexttrackUrl(url);
-      if (
-        response.result === false &&
-        !checkboxAudio &&
-        !checkboxForceVttContent
-      ) {
-        setAppIsWaiting(false);
-        hasTexttrackUrl = false;
-        setCurrStatus(AppStatus.ERROR_WHILE_GETTING_URLS);
+    // get text track url if is required
+    if (addVttContent || addPlainText) {
+      setCurrStatus(APP_STATUS.GETTING_TEXT_TRACK_URL);
+      texttrackUrl = await extractTexttrackUrl();
+    }
+
+    // get m3u8 audio url if is required
+    if ((forceVttContent && texttrackUrl! === null) || addAudio) {
+      setCurrStatus(APP_STATUS.GETTING_M3U8_AUDIO_URL);
+      m3u8Url = await extractM3u8Url();
+    }
+
+    // get vtt content of provided url if its required and possible
+    if (texttrackUrl !== null && (addVttContent || addPlainText)) {
+      setCurrStatus(APP_STATUS.GETTING_VTT_CONTENT);
+
+      vttGeneratedAt = Date.now();
+      const response = await getVttContent(texttrackUrl);
+
+      if (response.status === "error" && !forceVttContent) {
+        setCurrStatus(APP_STATUS.ERROR_WHILE_GETTING_VTT_CONTENT);
         return;
-      } else {
-        hasTexttrackUrl = true;
-        texttrackUrl = `${response.result}`;
       }
-      console.log("LJDKOAmoidmaoidmia");
+
+      vttContent = (response.result as string) ?? "";
     }
 
-    if (
-      (hasTexttrackUrl || checkboxVttContent || checkboxPlainText) &&
-      texttrackUrl
-    ) {
-      setCurrStatus(AppStatus.GETTING_VTT_CONTENT);
-      response = await getVttContent(texttrackUrl);
-      if (response.status === "error" || !response.result) {
-        setCurrStatus(AppStatus.ERROR);
-        setAppIsWaiting(false);
-        throw new Error(response.message || "Unknown error");
-      }
-      vttContent = `${response.result}`;
+    // get class audio in m4a format
+    if ((addAudio || (!vttContent && forceVttContent)) && m3u8Url !== null) {
+      setCurrStatus(APP_STATUS.GETTING_CLASS_AUDIO);
 
-      if (checkboxVttContent) {
-        const now = Date.now();
-        const id = crypto.randomUUID();
-
-        const newRow: DataRow = {
-          id: id,
-          file_name: `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
-            now
-          )}.srt`,
-          content: vttContent,
-          generated_at: now,
-        };
-        newData.push(newRow);
-      }
-    }
-
-    //
-    if ((checkboxAudio || !hasTexttrackUrl) && checkboxForceVttContent) {
-      setCurrStatus(AppStatus.GETTING_AUDIO_M3U8_URL);
-      response = await getM3u8Url(url);
-      hasM3u8Url = true;
-      m3u8Url = `${response.result}`;
-    }
-
-    if (
-      (checkboxAudio && hasM3u8Url) ||
-      (!hasTexttrackUrl && checkboxForceVttContent && m3u8Url)
-    ) {
-      const now = Date.now();
-      const id = crypto.randomUUID();
-      const fileName = `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
-        now
+      audioGeneratedAt = Date.now();
+      const filename = `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
+        audioGeneratedAt
       )}`;
+      const response = await saveAudioUsingM358Url(m3u8Url, filename);
 
-      setCurrStatus(AppStatus.GETTING_CLASS_AUDIO);
-      response = await saveAudioUsingM358Url(m3u8Url, fileName);
-      if (response.status === "error" || !response.result) {
-        setCurrStatus(AppStatus.ERROR_WHILE_GETTING_AUDIO);
-        setAppIsWaiting(false);
-        throw new Error(response.message || "Unknown error");
-      }
-      audioFileName = `${response.result}`;
-
-      if (checkboxAudio) {
-        const newRow: DataRow = {
-          id: id,
-          file_name: audioFileName,
-          generated_at: now,
-          is_audio: true,
-        };
-        newData.push(newRow);
+      if (response.status === "error") {
+        setCurrStatus(APP_STATUS.ERROR_WHILE_GETTING_AUDIO);
+        return;
       }
 
-      if (!hasTexttrackUrl && checkboxForceVttContent) {
-        setCurrStatus(AppStatus.GENERATING_VTT_CONTENT);
-        response = await generateVttContent(audioFileName);
-        if (response.status === "error" || !response.result) {
-          setCurrStatus(AppStatus.ERROR_WHILE_GENERATING_VTT);
-          console.log(response);
-          setAppIsWaiting(false);
-          throw new Error(response.message || "Unknown error");
-        }
-        vttContent = `${response.result}`;
-
-        if (checkboxVttContent) {
-          const now = Date.now();
-          const id = crypto.randomUUID();
-
-          const newRow: DataRow = {
-            id: id,
-            file_name: `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
-              now
-            )}.srt`,
-            content: vttContent,
-            generated_at: now,
-          };
-          newData.push(newRow);
-        }
-      }
+      audioFileName = (response.result as string) ?? "";
     }
 
-    if (checkboxPlainText && vttContent) {
-      setCurrStatus(AppStatus.CONVERTING_TO_PLAIN_TEXT);
-      response = await vvtToPlainText(vttContent);
-      if (response.status === "error" || !response.result) {
-        setCurrStatus(AppStatus.ERROR);
-        console.log(response);
-        setAppIsWaiting(false);
-        throw new Error(response.message || "Unknown error");
-      }
-      plainText = `${response.result}`;
+    // generate vtt content if its required
+    if (!vttContent && forceVttContent && audioFileName) {
+      setCurrStatus(APP_STATUS.GENERATING_VTT_CONTENT);
 
-      const now = Date.now();
+      vttGeneratedAt = Date.now();
+      const response = await generateVttContent(audioFileName);
+
+      if (response.status === "error" && !forceVttContent) {
+        setCurrStatus(APP_STATUS.ERROR_WHILE_GENERATING_VTT);
+        return;
+      }
+
+      vttContent = (response.result as string) ?? "";
+    }
+
+    // get plain text version of vtt content if its required and possible
+    if (vttContent && addPlainText) {
+      setCurrStatus(APP_STATUS.CONVERTING_TO_PLAIN_TEXT);
+      plainTextGeneratedAt = Date.now();
+      const response = await vvtToPlainText(vttContent);
+
+      if (response.status === "error") {
+        setCurrStatus(APP_STATUS.ERROR_WHILE_CONVERTING_TO_PLAIN_TEXT);
+        return;
+      }
+
+      plainText = (response.result as string) ?? "";
+    }
+
+    // no data error
+    if (!vttContent && !plainText && !audioFileName) {
+      setAppIsWaiting(false);
+      setCurrStatus(APP_STATUS.ERROR_WHILE_GETTING_DATA);
+      return;
+    }
+
+    // save vtt content to history in srt format
+    if (addVttContent && vttContent) {
       const id = crypto.randomUUID();
       const newRow: DataRow = {
         id: id,
+        generated_at: vttGeneratedAt,
+        content: vttContent,
         file_name: `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
-          now
-        )}.txt`,
-        content: plainText,
-        generated_at: now,
+          vttGeneratedAt
+        )}.srt`,
       };
       newData.push(newRow);
     }
 
-    if (newData && newData.length > 0) {
-      setCurrStatus(AppStatus.SAVING_TO_HISTORY);
+    // save plain text to history in txt format
+    if (addPlainText && plainText) {
+      const id = crypto.randomUUID();
+      const newRow: DataRow = {
+        id: id,
+        generated_at: plainTextGeneratedAt,
+        content: plainText,
+        file_name: `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
+          plainTextGeneratedAt
+        )}.txt`,
+      };
+      newData.push(newRow);
+    }
+
+    // save audio to history in m4a format
+    if (addAudio && audioFileName) {
+      const id = crypto.randomUUID();
+      const newRow: DataRow = {
+        id: id,
+        generated_at: plainTextGeneratedAt,
+        content: plainText,
+        file_name: audioFileName,
+        is_audio: true,
+      };
+      newData.push(newRow);
+    }
+
+    // save new data to history if exists
+    if (newData.length > 0) {
+      setCurrStatus(APP_STATUS.SAVING_TO_HISTORY);
 
       try {
         for (const row of newData) {
           const response = await addToHistory(row);
           if (response.status !== "success") {
-            setCurrStatus(AppStatus.ERROR_WHILE_SAVING);
             setAppIsWaiting(false);
+            setCurrStatus(APP_STATUS.ERROR_WHILE_SAVING);
             return;
           }
         }
-        setCurrStatus(AppStatus.READY);
       } catch (err) {
-        setCurrStatus(AppStatus.ERROR_WHILE_SAVING);
+        setAddAudio(false);
+        setCurrStatus(APP_STATUS.ERROR_WHILE_SAVING);
+        return;
       }
     }
 
+    playSound("mp3");
     setNotify("/history", true);
     setAppIsWaiting(false);
-    setCurrStatus(AppStatus.SUCCESS);
-    playSound("mp3");
+    setCurrStatus(APP_STATUS.FULL_SCRAPE_SUCCESS);
+  };
+
+  const extractTexttrackUrl = async (): Promise<string | null> => {
+    const response = await getTexttrackUrl(url);
+    return response.result === false && (!addAudio || !forceVttContent)
+      ? null
+      : `${response.result}`;
+  };
+
+  const extractM3u8Url = async (): Promise<string | null> => {
+    const response = await getM3u8Url(url);
+    return response.result === false ? null : `${response.result}`;
   };
 
   const changeURL = async (newUrl: string) => {
-    let newStatus: AppStatus;
+    let newStatus: APP_STATUS;
 
     if (newUrl.trim() === "") {
-      newStatus = AppStatus.IDLE;
+      newStatus = APP_STATUS.IDLE;
     } else {
       const response: ResultResponse = await isValidEscuelaITUrl(newUrl);
 
       if (response.result === true) {
-        newStatus = AppStatus.READY;
+        newStatus = APP_STATUS.READY_TO_SCRAPE;
       } else {
-        newStatus = AppStatus.INVALID_URL;
+        newStatus = APP_STATUS.INVALID_PROVIDED_URL;
       }
     }
 
     setCurrStatus(newStatus);
     setUrl(newUrl);
+  };
+
+  const readableAppStatus = () => {
+    let statusClassName = "";
+    switch (currStatus.type) {
+      case "warning":
+        statusClassName = "text-btn-warning-bg";
+        break;
+      case "error":
+        statusClassName = "text-btn-danger-bg";
+        break;
+      case "success":
+        statusClassName = "text-btn-success-bg";
+        break;
+      case "primary":
+        statusClassName = "text-btn-primary-bg";
+        break;
+      default:
+        statusClassName = "";
+        break;
+    }
+    return (
+      <span
+        className={flattenClasses(
+          `${statusClassName} ${currStatus.animation ?? ""}`
+        )}
+      >
+        {currStatus.message}
+      </span>
+    );
   };
 
   return (
@@ -274,17 +382,24 @@ const HomePage = () => {
             /clase/
             <span className="text-btn-primary-bg">[CONTENT]</span>
           </code>
-          {checkboxForceVttContent && (
-            <div className="mt-4 text-xs text-center text-text-tertiary-light dark:text-text-tertiary-dark max-w-[40rem]">
-              <strong className="text-btn-danger-bg">IMPORTANT:</strong> If the
-              provided course does not include an existing transcript, a new one
-              will be generated. This process{" "}
-              <u className="text-btn-warning-bg-hover dark:text-btn-warning-bg/90">
-                may consume additional resources
-              </u>{" "}
-              and increase the total processing time.
-            </div>
-          )}
+        </div>
+        <div
+          className={flattenClasses(`
+            text-center text-xs text-text-tertiary-light dark:text-text-tertiary-dark max-w-[40rem] overflow-hidden transition-all duration-300 ease-in-out
+            ${
+              forceVttContent
+                ? "max-h-96 mb-4 opacity-100"
+                : "max-h-0 opacity-0"
+            }
+          `)}
+        >
+          <strong className="text-btn-danger-bg">IMPORTANT:</strong> If the
+          provided course does not include an existing transcript, a new one
+          will be generated. This process{" "}
+          <u className="text-btn-warning-bg-hover dark:text-btn-warning-bg/90">
+            may consume additional resources
+          </u>{" "}
+          and increase the total processing time.
         </div>
         <form
           onSubmit={(e) => {
@@ -309,37 +424,46 @@ const HomePage = () => {
               <Input
                 type="checkbox"
                 label="SubRip Subtitle (.srt)"
-                checked={checkboxVttContent}
-                onChange={() => setIncludeVttContent(!checkboxVttContent)}
+                checked={addVttContent}
+                onChange={() => {
+                  setAddVttContent(!addVttContent);
+                }}
                 disabled={appIsWaiting}
                 layoutClassName="mb-2"
               />
               <Input
                 type="checkbox"
                 label="Plain Text (.txt)"
-                checked={checkboxPlainText}
-                onChange={() => setCheckboxPlainText(!checkboxPlainText)}
+                checked={addPlainText}
+                onChange={() => {
+                  setAddPlainText(!addPlainText);
+                }}
                 disabled={appIsWaiting}
                 layoutClassName="mb-2"
               />
               <Input
                 type="checkbox"
                 label="Class Audio (.m4a)"
-                checked={checkboxAudio}
-                onChange={() => setCheckboxAudio(!checkboxAudio)}
+                checked={addAudio}
+                onChange={() => {
+                  setAddAudio(!addAudio);
+                }}
                 disabled={appIsWaiting}
                 layoutClassName="mb-2"
               />
             </div>
             <div className="w-[50%] flex flex-col items-end">
               <div className="relative flex items-center mb-2">
-                <Tooltip message="Recommended only if you have a modern Nvidia GPU">
-                  <div className="peer flex relative me-2">
+                <Tooltip
+                  message="Recommended only if you have a modern Nvidia GPU"
+                  className="me-2"
+                >
+                  <div className="flex items-center justify-center relative">
                     <Icon
                       iconName="info"
                       className="text-btn-warning-bg/90 pointer-events-auto animate-pulse"
                     />
-                    <div className="absolute w-full h-full bg-btn-warning-bg-hover/25 rounded-full animate-ping pointer-events-none"></div>
+                    <div className="absolute w-[15px] h-[15px] bg-btn-warning-bg-hover/25 rounded-full animate-ping pointer-events-none"></div>
                   </div>
                 </Tooltip>
                 <span className="text-btn-warning-bg-hover dark:text-btn-warning-bg/90">
@@ -349,10 +473,8 @@ const HomePage = () => {
               <Input
                 type="checkbox"
                 label="Force Generate Content"
-                checked={checkboxForceVttContent}
-                onChange={() =>
-                  setCheckboxForceVttContent(!checkboxForceVttContent)
-                }
+                checked={forceVttContent}
+                onChange={() => setForceVttContent(!forceVttContent)}
                 disabled={appIsWaiting}
               />
             </div>
@@ -365,10 +487,10 @@ const HomePage = () => {
               fontWeight: "400",
             }}
             disabled={
-              (currStatus !== AppStatus.READY &&
-                currStatus !== AppStatus.SUCCESS) ||
               appIsWaiting ||
-              (!checkboxVttContent && !checkboxPlainText && !checkboxAudio)
+              currStatus === APP_STATUS.INVALID_PROVIDED_URL ||
+              currStatus == APP_STATUS.IDLE ||
+              (!addVttContent && !addPlainText && !addAudio)
             }
             isLoading={appIsWaiting}
           >
@@ -377,37 +499,8 @@ const HomePage = () => {
           </Button>
         </form>
       </Card>
-      <code className="text-base w-full text-center my-4 mb-16 text-text-tertiary-light dark:text-text-tertiary-dark">
-        &lt;{" "}
-        <span
-          className={flattenClasses(`
-            ${
-              currStatus === AppStatus.IDLE &&
-              "text-text-secondary-light dark:text-text-secondary-dark"
-            }
-            ${
-              currStatus === AppStatus.READY &&
-              "animate-pulse text-btn-primary-bg"
-            }
-            ${appIsWaiting && "animate-pulse text-btn-warning-bg"}
-            ${
-              currStatus === AppStatus.READY || currStatus === AppStatus.SUCCESS
-                ? "text-btn-success-bg"
-                : ""
-            }
-            ${
-              currStatus === AppStatus.INVALID_URL ||
-              currStatus === AppStatus.ERROR ||
-              currStatus === AppStatus.ERROR_WHILE_SAVING ||
-              currStatus === AppStatus.ERROR_WHILE_GETTING_URLS
-                ? "text-btn-danger-bg"
-                : ""
-            }
-          `)}
-        >
-          {currStatus}
-        </span>{" "}
-        &#47;&gt;
+      <code className="max-w-[25rem] mx-auto text-base w-full text-center my-4 mb-16 text-text-tertiary-light dark:text-text-tertiary-dark">
+        &lt; {readableAppStatus()} &#47;&gt;
       </code>
     </div>
   );
