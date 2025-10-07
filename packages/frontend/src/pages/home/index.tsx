@@ -58,6 +58,16 @@ const HomePage = () => {
   const [checkboxAudio, setCheckboxAudio] = useState(false);
   const [checkboxForceVttContent, setCheckboxForceVttContent] = useState(false);
 
+  const getUrlCourse = (): string | any => {
+    const match = url.match(/https:\/\/escuela.it\/cursos\/(.+)\/clase\/(.+)/);
+    return match ? match[1] : null;
+  };
+
+  const getUrlClass = (): string | any => {
+    const match = url.match(/https:\/\/escuela.it\/cursos\/(.+)\/clase\/(.+)/);
+    return match ? match[2] : null;
+  };
+
   const handleClick = async () => {
     setCurrStatus(AppStatus.LOADING_PROFILE);
     setAppIsWaiting(true);
@@ -72,39 +82,28 @@ const HomePage = () => {
     let hasTexttrackUrl = false;
     let hasM3u8Url = false;
 
-    try {
-      if (checkboxPlainText || checkboxVttContent) {
-        setCurrStatus(AppStatus.GETTING_TEXT_TRACK_URL);
-        response = await getTexttrackUrl(url);
+    if (checkboxPlainText || checkboxVttContent) {
+      setCurrStatus(AppStatus.GETTING_TEXT_TRACK_URL);
+      response = await getTexttrackUrl(url);
+      if (
+        response.result === false &&
+        !checkboxAudio &&
+        !checkboxForceVttContent
+      ) {
+        setAppIsWaiting(false);
+        hasTexttrackUrl = false;
+        setCurrStatus(AppStatus.ERROR_WHILE_GETTING_URLS);
+        return;
+      } else {
         hasTexttrackUrl = true;
         texttrackUrl = `${response.result}`;
       }
-    } catch (err) {}
-
-    try {
-      if ((checkboxAudio || !hasTexttrackUrl) && checkboxForceVttContent) {
-        setCurrStatus(AppStatus.GETTING_AUDIO_M3U8_URL);
-        response = await getM3u8Url(url);
-        hasM3u8Url = true;
-        m3u8Url = `${response.result}`;
-      }
-    } catch (err) {}
-
-    if (response === undefined || (!hasTexttrackUrl && !hasM3u8Url)) {
-      setCurrStatus(AppStatus.ERROR_WHILE_GETTING_URLS);
-      setAppIsWaiting(false);
-      return;
-    }
-
-    if (response.status === "error" || !response.result) {
-      setCurrStatus(AppStatus.ERROR);
-      setAppIsWaiting(false);
-      return;
+      console.log("LJDKOAmoidmaoidmia");
     }
 
     if (
-      (hasTexttrackUrl && (checkboxVttContent || checkboxPlainText)) ||
-      checkboxForceVttContent
+      (hasTexttrackUrl || checkboxVttContent || checkboxPlainText) &&
+      texttrackUrl
     ) {
       setCurrStatus(AppStatus.GETTING_VTT_CONTENT);
       response = await getVttContent(texttrackUrl);
@@ -121,7 +120,9 @@ const HomePage = () => {
 
         const newRow: DataRow = {
           id: id,
-          file_name: `${id}-${formateDateForFileName(now)}.srt`,
+          file_name: `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
+            now
+          )}.srt`,
           content: vttContent,
           generated_at: now,
         };
@@ -129,14 +130,23 @@ const HomePage = () => {
       }
     }
 
+    //
+    if ((checkboxAudio || !hasTexttrackUrl) && checkboxForceVttContent) {
+      setCurrStatus(AppStatus.GETTING_AUDIO_M3U8_URL);
+      response = await getM3u8Url(url);
+      hasM3u8Url = true;
+      m3u8Url = `${response.result}`;
+    }
+
     if (
-      (!hasTexttrackUrl && hasM3u8Url) ||
       (checkboxAudio && hasM3u8Url) ||
-      (checkboxForceVttContent && hasM3u8Url)
+      (!hasTexttrackUrl && checkboxForceVttContent && m3u8Url)
     ) {
       const now = Date.now();
       const id = crypto.randomUUID();
-      const fileName = `${id}-${formateDateForFileName(now)}`;
+      const fileName = `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
+        now
+      )}`;
 
       setCurrStatus(AppStatus.GETTING_CLASS_AUDIO);
       response = await saveAudioUsingM358Url(m3u8Url, fileName);
@@ -157,7 +167,7 @@ const HomePage = () => {
         newData.push(newRow);
       }
 
-      if (!hasTexttrackUrl && (checkboxVttContent || checkboxPlainText)) {
+      if (!hasTexttrackUrl && checkboxForceVttContent) {
         setCurrStatus(AppStatus.GENERATING_VTT_CONTENT);
         response = await generateVttContent(audioFileName);
         if (response.status === "error" || !response.result) {
@@ -174,7 +184,9 @@ const HomePage = () => {
 
           const newRow: DataRow = {
             id: id,
-            file_name: `${id}-${formateDateForFileName(now)}.srt`,
+            file_name: `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
+              now
+            )}.srt`,
             content: vttContent,
             generated_at: now,
           };
@@ -198,7 +210,9 @@ const HomePage = () => {
       const id = crypto.randomUUID();
       const newRow: DataRow = {
         id: id,
-        file_name: `${id}-${formateDateForFileName(now)}.txt`,
+        file_name: `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
+          now
+        )}.txt`,
         content: plainText,
         generated_at: now,
       };
@@ -289,7 +303,7 @@ const HomePage = () => {
           />
           <div className="flex flex-row items-start justify-start mb-4">
             <div className="w-[50%] flex flex-col items-end">
-              <span className="mb-2 underline underline-offset-2 text-text-secondary-light dark:text-text-secondary-dark">
+              <span className="mb-2 text-text-secondary-light dark:text-text-secondary-dark">
                 Formats
               </span>
               <Input
@@ -328,13 +342,13 @@ const HomePage = () => {
                     <div className="absolute w-full h-full bg-btn-warning-bg-hover/25 rounded-full animate-ping pointer-events-none"></div>
                   </div>
                 </Tooltip>
-                <span className="text-btn-warning-bg-hover dark:text-btn-warning-bg/90 underline underline-offset-2">
+                <span className="text-btn-warning-bg-hover dark:text-btn-warning-bg/90">
                   Experimental
                 </span>
               </div>
               <Input
                 type="checkbox"
-                label="Autogenerate Content"
+                label="Force Generate Content"
                 checked={checkboxForceVttContent}
                 onChange={() =>
                   setCheckboxForceVttContent(!checkboxForceVttContent)
