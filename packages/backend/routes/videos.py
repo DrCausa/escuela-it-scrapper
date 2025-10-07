@@ -19,15 +19,9 @@ def get_texttrack_url(url: str) -> Response:
     driver.switch_to.frame(iframe)
     
     track_src = get_track_src(driver)
-    if track_src is None:
-      return jsonify({
-        "status": "success",
-        "message": False
-      }), 500
-
     return jsonify({
       "status": "success",
-      "result": track_src
+      "result": track_src if track_src is not None else False
     }), 200
   except:
     return jsonify({
