@@ -12,6 +12,7 @@ packages/backend/history/*
 .env.local
 .env.*.local
 *.local
+.old/
 
 # IDE / Editor
 .vscode/
