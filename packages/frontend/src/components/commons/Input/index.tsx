@@ -8,6 +8,7 @@ type InputProps = {
   layoutClassName?: string;
   labelCheckboxClassName?: string;
   checkboxClassName?: string;
+  innerCheckboxClassName?: string;
 } & Omit<InputHTMLAttributes<HTMLInputElement>, "className">;
 
 const Input = ({
@@ -21,6 +22,7 @@ const Input = ({
   layoutClassName,
   labelCheckboxClassName,
   checkboxClassName,
+  innerCheckboxClassName,
   disabled,
   ...rest
 }: InputProps) => {
@@ -128,6 +130,7 @@ const Input = ({
                     ? disabledInnerCheckboxClassName
                     : enabledInnerCheckboxClassName
                 }
+                ${innerCheckboxClassName}
               `)}
             />
           </div>

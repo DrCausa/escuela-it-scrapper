@@ -21,6 +21,7 @@ import type { Data, DataRow, ResultResponse } from "@services/api/types";
 import { addToHistory } from "@services/api/controllers/historyController";
 import { formateDateForFileName } from "@/utils/formatDate";
 import Tooltip from "@/components/commons/Tooltip";
+import { formatPlainText } from "@/services/api/controllers/geminiController";
 
 interface AppStatus {
   message: string;
@@ -73,6 +74,11 @@ const APP_STATUS = {
     type: "warning",
     animation: "animate-pulse",
   },
+  FORMATTING_USING_GEMINI: {
+    message: "Formatting plain text using Gemini...",
+    type: "warning",
+    animation: "animate-pulse",
+  },
   SAVING_TO_HISTORY: {
     message: "Saving to history...",
     type: "warning",
@@ -106,6 +112,10 @@ const APP_STATUS = {
     message: "An error occurred while converting to plain text",
     type: "error",
   },
+  ERROR_WHILE_FORMATTING_USING_GEMINI: {
+    message: "An error occurred while trying to format using gemini!",
+    type: "error",
+  },
   ERROR_WHILE_GETTING_DATA: {
     message: "Error while getting data!",
     type: "error",
@@ -133,6 +143,7 @@ const HomePage = () => {
   const [addVttContent, setAddVttContent] = useState(true);
   const [addPlainText, setAddPlainText] = useState(true);
   const [addAudio, setAddAudio] = useState(false);
+  const [addGeminiFormat, setAddGeminiFormat] = useState(false);
   const [forceVttContent, setForceVttContent] = useState(false);
 
   const getUrlCourse = (): string | any => {
@@ -153,11 +164,13 @@ const HomePage = () => {
 
     let vttContent = "",
       plainText = "",
-      audioFileName = "";
+      audioFileName = "",
+      formattedPlainText = "";
 
     let vttGeneratedAt = 0,
       plainTextGeneratedAt = 0,
-      audioGeneratedAt = 0;
+      audioGeneratedAt = 0,
+      formattedPlainTextGeneratedAt = 0;
 
     let newData: Data = [];
 
@@ -168,7 +181,7 @@ const HomePage = () => {
     }
 
     // get m3u8 audio url if is required
-    if ((forceVttContent && texttrackUrl! === null) || addAudio) {
+    if ((forceVttContent && texttrackUrl === null) || addAudio) {
       setCurrStatus(APP_STATUS.GETTING_M3U8_AUDIO_URL);
       m3u8Url = await extractM3u8Url();
     }
@@ -235,6 +248,21 @@ const HomePage = () => {
       plainText = (response.result as string) ?? "";
     }
 
+    // get gemini format using plain text
+    if (addGeminiFormat && plainText) {
+      setCurrStatus(APP_STATUS.FORMATTING_USING_GEMINI);
+      formattedPlainTextGeneratedAt = Date.now();
+      const response = await formatPlainText(plainText);
+
+      if (response.status === "error") {
+        setCurrStatus(APP_STATUS.ERROR_WHILE_FORMATTING_USING_GEMINI);
+        return;
+      }
+
+      console.log(response.result);
+      formattedPlainText = (response.result as string) ?? "";
+    }
+
     // no data error
     if (!vttContent && !plainText && !audioFileName) {
       setAppIsWaiting(false);
@@ -249,7 +277,7 @@ const HomePage = () => {
         id: id,
         generated_at: vttGeneratedAt,
         content: vttContent,
-        file_name: `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
+        file_name: `${getUrlCourse()}-${getUrlClass()}-vtt-${formateDateForFileName(
           vttGeneratedAt
         )}.srt`,
       };
@@ -263,8 +291,22 @@ const HomePage = () => {
         id: id,
         generated_at: plainTextGeneratedAt,
         content: plainText,
-        file_name: `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
+        file_name: `${getUrlCourse()}-${getUrlClass()}-plain-${formateDateForFileName(
           plainTextGeneratedAt
+        )}.txt`,
+      };
+      newData.push(newRow);
+    }
+
+    // save formatted plain text in txt format
+    if (addGeminiFormat && formattedPlainText) {
+      const id = crypto.randomUUID();
+      const newRow: DataRow = {
+        id: id,
+        generated_at: formattedPlainTextGeneratedAt,
+        content: formattedPlainText,
+        file_name: `${getUrlCourse()}-${getUrlClass()}-formatted-${formateDateForFileName(
+          formattedPlainTextGeneratedAt
         )}.txt`,
       };
       newData.push(newRow);
@@ -416,9 +458,10 @@ const HomePage = () => {
             layoutClassName="mb-4"
             disabled={appIsWaiting}
           />
-          <div className="flex flex-row items-start justify-start mb-4">
+          <div className="flex flex-row items-start justify-start mb-4 gap-5">
             <div className="w-[50%] flex flex-col items-end">
-              <span className="mb-2 text-text-secondary-light dark:text-text-secondary-dark">
+              <span className="mb-2 text-text-secondary-light dark:text-text-secondary-dark flex items-center gap-1">
+                <Icon iconName="instant_mix" />
                 Formats
               </span>
               <Input
@@ -453,30 +496,52 @@ const HomePage = () => {
               />
             </div>
             <div className="w-[50%] flex flex-col items-end">
-              <div className="relative flex items-center mb-2">
+              <span className="text-text-secondary-light dark:text-text-secondary-dark mb-2 flex items-center gap-1">
+                <div className="relative flex">
+                  <Icon
+                    iconName="experiment"
+                    className="animate-pulse text-btn-warning-bg/90"
+                  />
+                  <div className="w-[12px] h-[12px] left-[50%] top-[60%] -translate-x-[50%] -translate-y-[50%] absolute bg-btn-warning-bg/25 rotate-45 animate-ping rounded-sm"></div>
+                </div>
+                Experimental
+              </span>
+              <div className="relative flex mb-2 gap-2 group w-full">
                 <Tooltip
                   message="Recommended only if you have a modern Nvidia GPU"
-                  className="me-2"
+                  className="w-full justify-end"
                 >
-                  <div className="flex items-center justify-center relative">
-                    <Icon
-                      iconName="info"
-                      className="text-btn-warning-bg/90 pointer-events-auto animate-pulse"
-                    />
-                    <div className="absolute w-[15px] h-[15px] bg-btn-warning-bg-hover/25 rounded-full animate-ping pointer-events-none"></div>
-                  </div>
+                  <Input
+                    type="checkbox"
+                    label="Try Generate VTT Content"
+                    checked={forceVttContent}
+                    onChange={() => setForceVttContent(!forceVttContent)}
+                    disabled={appIsWaiting}
+                    checkboxClassName="group-hover:!border-btn-warning-bg/90 group-hover:animate-pulse transition-all duration-300"
+                    labelCheckboxClassName="group-hover:!text-btn-warning-bg/90 transition-all duration-300"
+                    innerCheckboxClassName="group-hover:!bg-btn-warning-bg/90"
+                  />
                 </Tooltip>
-                <span className="text-btn-warning-bg-hover dark:text-btn-warning-bg/90">
-                  Experimental
-                </span>
               </div>
-              <Input
-                type="checkbox"
-                label="Force Generate Content"
-                checked={forceVttContent}
-                onChange={() => setForceVttContent(!forceVttContent)}
-                disabled={appIsWaiting}
-              />
+              <div className="relative flex gap-2 group w-full">
+                <Tooltip
+                  message="This option uses the gemini-2.5-flash model, so you'll need a Gemini API KEY"
+                  className="w-full justify-end"
+                >
+                  <Input
+                    type="checkbox"
+                    label="Gemini Format (.txt)"
+                    checked={addGeminiFormat}
+                    onChange={() => {
+                      setAddGeminiFormat(!addGeminiFormat);
+                    }}
+                    disabled={appIsWaiting}
+                    checkboxClassName="group-hover:!border-btn-warning-bg/90 group-hover:animate-pulse transition-all duration-300"
+                    labelCheckboxClassName="group-hover:!text-btn-warning-bg/90 transition-all duration-300"
+                    innerCheckboxClassName="group-hover:!bg-btn-warning-bg/90"
+                  />
+                </Tooltip>
+              </div>
             </div>
           </div>
           <Button
