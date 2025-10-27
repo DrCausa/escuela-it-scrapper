@@ -31,7 +31,8 @@ export function createServer() {
   app.use((err, req, res, next) => {
     console.error("Error no controlado", err);
     res.status(500).json({
-      error: "Error interno del servidor",
+      status: "error",
+      message: "Error interno del servidor",
     });
   });
 
