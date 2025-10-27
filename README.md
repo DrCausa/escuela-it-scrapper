@@ -1,180 +1,209 @@
 # Escuela IT Scrapper
 
-Escuela IT Scrapper is a web application designed to scrape educational content, process transcripts, and organize information in a structured way. The project includes a Python backend, a React frontend, and an additional service for formatting transcripts using Google Generative AI.
+**Escuela IT Scrapper** is a full-stack web application designed to **extract, process, and organize educational content** from Escuela IT and similar sources.  
+It automates transcript retrieval, audio processing, and text formatting — powered by **Flask**, **Selenium**, and **Google Generative AI**.
 
-## Project Structure
+---
+
+## 🧭 Project Structure
 
 ```
 escuela-it-scrapper/
 ├── packages/
-│   ├── backend/          # Backend in Python
-│   ├── frontend/         # Frontend in React
-│   └── gemini-service/   # Service for transcript formatting
-├── package.json          # Scripts and dependencies configuration
-├── pnpm-workspace.yaml   # Monorepo configuration
+│   ├── backend/          # Python Flask API
+│   ├── frontend/         # React app with Vite
+│   └── gemini-service/   # Transcript formatting microservice (Google AI)
+├── package.json          # Root configuration and scripts
+├── pnpm-workspace.yaml   # Monorepo workspace configuration
 └── README.md             # Project documentation
 ```
 
-## Features
+---
 
-- **Content Scraping**: Extracts information from web pages.
-- **Transcript Processing**: Organizes and structures video transcripts.
-- **Interactive Frontend**: User interface to interact with the system.
-- **Google Generative AI Integration**: Enhances the format and clarity of transcripts.
+## 🚀 Features
 
-## Requirements
+- **Video Scraping** – Extracts text tracks (subtitles) and M3U8 URLs using Selenium.
+- **Audio Downloading** – Saves `.m3u8` audio streams locally.
+- **VTT Processing** – Converts `.vtt` subtitle files into plain text.
+- **Automatic Transcript Formatting** – Uses Google Generative AI for structured transcript generation.
+- **History Management** – Stores processed session data in JSON.
+- **REST API Design** – Clean, modular, and easy to integrate.
 
-- **Node.js**: >= 18.0.0
-- **Python**: >= 3.11
-- **PNPM**: >= 7.0.0
+---
 
-## Installation
+## ⚙️ Requirements
 
-1. Clone the repository:
+- **Node.js** ≥ 18.0.0
+- **Python** ≥ 3.11
+- **PNPM** ≥ 7.0.0
+- **Google Generative AI API Key**
+
+---
+
+## 🧩 Installation
+
+1. **Clone the repository**
 
    ```bash
    git clone https://github.com/your-username/escuela-it-scrapper.git
    cd escuela-it-scrapper
    ```
 
-2. Install dependencies:
+2. **Install dependencies**
 
    ```bash
-   pnpm install
-   pnpm run pip-install
+   pnpm run install:all
    ```
 
-3. Configure environment variables:
-   - Create a `.env` file in `packages/gemini-service/` with your Google Generative AI API key:
-     ```
-     GEMINI_API_KEY=your_api_key
-     ```
+3. **Environment setup**
 
-## Available Scripts
+   Create a `.env` file in `packages/gemini-service/`:
 
-### Global
-
-- **`pnpm dev`**: Runs all services in development mode.
-- **`pnpm dev:frontend`**: Runs the frontend.
-- **`pnpm dev:backend`**: Runs the backend.
-- **`pnpm build:frontend`**: Builds the frontend.
-- **`pnpm preview`**: Previews the built frontend.
-- **`pnpm start`**: Starts the backend.
-- **`pnpm lint`**: Runs linters across all packages.
-- **`pnpm clean`**: Cleans generated files.
-
-### Backend
-
-- **`pnpm --filter ./packages/backend run dev`**: Runs the Flask server.
-- **`pnpm --filter ./packages/backend run pip-install`**: Installs Python dependencies.
-
-### Frontend
-
-- **`pnpm --filter ./packages/frontend run dev`**: Runs the Vite development server.
-- **`pnpm --filter ./packages/frontend run build`**: Builds the project.
-
-### Gemini Service
-
-- **`pnpm --filter ./packages/gemini-service run dev`**: Runs the transcript formatting service.
-
-## Endpoints
-
-### Backend
-
-1. **`POST /scrape`**
-
-   - **Description**: Submits a URL for scraping.
-   - **Request Body**:
-     ```json
-     {
-       "url": "https://example.com"
-     }
-     ```
-   - **Response**:
-     ```json
-     {
-       "data": "Scraped content"
-     }
-     ```
-
-2. **`POST /get-content`**
-
-   - **Description**: Retrieves processed content with or without timestamps.
-   - **Request Body**:
-     ```json
-     {
-       "hasTime": true,
-       "url": "https://example.com"
-     }
-     ```
-   - **Response**:
-     ```json
-     {
-       "content": "Processed content"
-     }
-     ```
-
-3. **`POST /format`**
-   - **Description**: Formats a provided text.
-   - **Request Body**:
-     ```json
-     {
-       "text": "Raw transcript text"
-     }
-     ```
-   - **Response**:
-     ```json
-     {
-       "formatted": "Formatted transcript"
-     }
-     ```
-
-## Frontend Routes
-
-1. **`/` (Home Page)**
-
-   - **Description**: Main page to input a URL and perform scraping.
-
-2. **`/history` (History Page)**
-
-   - **Description**: Displays the history of generated files.
-
-3. **`*` (Not Found Page)**
-   - **Description**: Error page for non-existent routes.
-
-## Usage
-
-1. **Frontend**: Access the interface at `http://localhost:5173` to interact with the system.
-2. **Endpoints**:
-   - Use the provided endpoints to scrape content, process transcripts, and format text.
-
-## Technologies Used
-
-- **Frontend**: React, Vite, TailwindCSS
-- **Backend**: Flask, Python
-- **Additional Service**: Google Generative AI, Express
-
-## Contribution
-
-1. Fork the repository.
-2. Create a new branch:
-   ```bash
-   git checkout -b feature/new-feature
    ```
-3. Make your changes and commit them:
-   ```bash
-   git commit -m "Added new feature"
+   PORT=4000
+   CORS_ORIGIN=http://localhost:5173
+   GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+   MAX_MB=50
    ```
-4. Push your changes:
-   ```bash
-   git push origin feature/new-feature
-   ```
-5. Open a Pull Request.
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-Thank you for contributing to Escuela IT Scrapper!
+## 🧠 Scripts
+
+### 🌐 Global
+
+| Command               | Description                            |
+| --------------------- | -------------------------------------- |
+| `pnpm dev`            | Runs all services in development mode. |
+| `pnpm dev:frontend`   | Starts the React frontend.             |
+| `pnpm dev:backend`    | Starts the Flask backend.              |
+| `pnpm dev:gemini`     | Starts the Gemini formatting service.  |
+| `pnpm build:frontend` | Builds the frontend for production.    |
+| `pnpm preview`        | Previews the built frontend.           |
+| `pnpm lint`           | Runs linters across all packages.      |
+| `pnpm clean`          | Removes generated files.               |
+
+---
+
+## 🔌 API Endpoints
+
+### 🎞️ Videos
+
+| Method | Endpoint             | Description                                                           |
+| ------ | -------------------- | --------------------------------------------------------------------- |
+| `POST` | `/get-texttrack-url` | Extracts the VTT (text track) URL from a given Escuela IT video page. |
+| `POST` | `/get-m3u8-url`      | Extracts the M3U8 audio URL from a video player configuration.        |
+
+---
+
+### 🎧 Audios
+
+| Method | Endpoint                     | Description                                         |
+| ------ | ---------------------------- | --------------------------------------------------- |
+| `POST` | `/save-audio-using-m3u8-url` | Downloads an audio file from an M3U8 source.        |
+| `POST` | `/download-saved-audio`      | Downloads an already saved audio file.              |
+| `POST` | `/generate-vtt-content`      | Generates a VTT transcript from a given audio file. |
+
+---
+
+### 🗂️ Data
+
+| Method | Endpoint          | Description                                         |
+| ------ | ----------------- | --------------------------------------------------- |
+| `POST` | `/add-to-history` | Appends a record to the history file (`data.json`). |
+| `GET`  | `/get-history`    | Retrieves stored history data.                      |
+
+---
+
+### 🧾 Transcripts
+
+| Method | Endpoint             | Description                                      |
+| ------ | -------------------- | ------------------------------------------------ |
+| `POST` | `/get-vtt-content`   | Retrieves raw VTT content from a text track URL. |
+| `POST` | `/vvt-to-plain-text` | Converts VTT content to plain text.              |
+
+---
+
+### ⚙️ Utilities
+
+| Method | Endpoint                  | Description                                             |
+| ------ | ------------------------- | ------------------------------------------------------- |
+| `POST` | `/is-valid-escuelait-url` | Validates whether a provided URL belongs to Escuela IT. |
+| `POST` | `/is-valid-texttrack-url` | Validates a text track (VTT) URL.                       |
+
+---
+
+### 🤖 Gemini Service
+
+| Method | Endpoint                 | Description                                                           |
+| ------ | ------------------------ | --------------------------------------------------------------------- |
+| `POST` | `/api/format-plain-text` | Sends a plain text transcript to Google Generative AI for formatting. |
+
+---
+
+## 🖥️ Frontend Routes
+
+| Route      | Description                                               |
+| ---------- | --------------------------------------------------------- |
+| `/`        | Home page — allows input of Escuela IT URLs and scraping. |
+| `/history` | Displays saved scraping history.                          |
+| `*`        | Fallback page (404 Not Found).                            |
+
+---
+
+## 🧰 Tech Stack
+
+**Frontend**
+
+- React, Vite, TailwindCSS
+
+**Backend**
+
+- Flask, Python, Selenium
+
+**External Service**
+
+- Node.js, Express, Google Generative AI
+
+**Infrastructure**
+
+- PNPM (monorepo management)
+- JSON storage for local data
+
+---
+
+## 🧪 Usage
+
+1. **Start all services**
+   ```bash
+   pnpm dev
+   ```
+2. **Open the frontend**
+   Go to [http://localhost:5173](http://localhost:5173)
+3. **Use the API**
+   Test endpoints with Postman, HTTPie or your frontend app.
+
+---
+
+## 🤝 Contribution
+
+1. Fork this repository
+2. Create a new feature branch:
+   ```bash
+   git checkout -b feature/new-feature
+   ```
+3. Make your changes and commit:
+   ```bash
+   git commit -m "Add new feature"
+   ```
+4. Push to your branch:
+   ```bash
+   git push origin feature/new-feature
+   ```
+5. Open a Pull Request 🎉
+
+---
+
+## 🧾 License
+
+This project is licensed under the [MIT License](LICENSE).
