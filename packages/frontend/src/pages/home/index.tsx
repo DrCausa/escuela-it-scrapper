@@ -4,12 +4,12 @@ import Icon from "@components/commons/Icon";
 import { useNotify } from "@contexts/NotificationContext";
 import { useTheme } from "@hooks/useTheme";
 import {
-  generateVttContent,
+  generateVTTContent,
   getM3u8Url,
   getTexttrackUrl,
   getVttContent,
   isValidEscuelaITUrl,
-  saveAudioUsingM358Url,
+  saveAudioUsingM3u8Url,
   vvtToPlainText,
 } from "@services/api/controllers/scrapingController";
 import { flattenClasses } from "@utils/classNames";
@@ -21,7 +21,11 @@ import type { Data, DataRow, ResultResponse } from "@services/api/types";
 import { addToHistory } from "@services/api/controllers/historyController";
 import { formateDateForFileName } from "@/utils/formatDate";
 import Tooltip from "@/components/commons/Tooltip";
-import { formatPlainText } from "@/services/api/controllers/geminiController";
+import {
+  formatPlainText,
+  formatVTTContent,
+} from "@/services/api/controllers/geminiController";
+import { usePersistedState } from "@/hooks/usePersistedState";
 
 interface AppStatus {
   message: string;
@@ -74,8 +78,13 @@ const APP_STATUS = {
     type: "warning",
     animation: "animate-pulse",
   },
-  FORMATTING_USING_GEMINI: {
+  FORMATTING_PLAIN_TEXT_USING_GEMINI: {
     message: "Formatting plain text using Gemini...",
+    type: "warning",
+    animation: "animate-pulse",
+  },
+  FORMATTING_VTT_CONTENT_USING_GEMINI: {
+    message: "Formatting VTT content using Gemini...",
     type: "warning",
     animation: "animate-pulse",
   },
@@ -140,11 +149,28 @@ const HomePage = () => {
   const [currStatus, setCurrStatus] = useState<AppStatus>(APP_STATUS.IDLE);
   const [appIsWaiting, setAppIsWaiting] = useState(false);
   const [url, setUrl] = useState("");
-  const [addVttContent, setAddVttContent] = useState(true);
-  const [addPlainText, setAddPlainText] = useState(true);
-  const [addAudio, setAddAudio] = useState(false);
-  const [addGeminiFormat, setAddGeminiFormat] = useState(false);
-  const [forceVttContent, setForceVttContent] = useState(false);
+
+  const [addVTTContent, setAddVTTContent] = usePersistedState(
+    "addVTTContent",
+    true
+  );
+  const [addPlainText, setAddPlainText] = usePersistedState(
+    "addPlainText",
+    true
+  );
+  const [addAudio, setAddAudio] = usePersistedState("addAudio", false);
+  const [addFormattedPlainText, setAddFormattedPlainText] = usePersistedState(
+    "addFormattedPlainText",
+    false
+  );
+  const [addFormattedVTTContent, setAddFormattedVTTContent] = usePersistedState(
+    "addFormattedVTTContent",
+    false
+  );
+  const [forceVTTContent, setForceVTTContent] = usePersistedState(
+    "forceVTTContent",
+    false
+  );
 
   const getUrlCourse = (): string | any => {
     const match = url.match(/https:\/\/escuela.it\/cursos\/(.+)\/clase\/(.+)/);
@@ -165,35 +191,48 @@ const HomePage = () => {
     let vttContent = "",
       plainText = "",
       audioFileName = "",
-      formattedPlainText = "";
+      formattedPlainText = "",
+      formattedVTTContent = "";
 
     let vttGeneratedAt = 0,
       plainTextGeneratedAt = 0,
       audioGeneratedAt = 0,
-      formattedPlainTextGeneratedAt = 0;
+      formattedPlainTextGeneratedAt = 0,
+      formattedVTTContentGeneratedAt = 0;
 
     let newData: Data = [];
 
     // get text track url if is required
-    if (addVttContent || addPlainText) {
+    if (
+      addVTTContent ||
+      addPlainText ||
+      addFormattedPlainText ||
+      addFormattedVTTContent
+    ) {
       setCurrStatus(APP_STATUS.GETTING_TEXT_TRACK_URL);
       texttrackUrl = await extractTexttrackUrl();
     }
 
     // get m3u8 audio url if is required
-    if ((forceVttContent && texttrackUrl === null) || addAudio) {
+    if ((texttrackUrl === null && forceVTTContent) || addAudio) {
       setCurrStatus(APP_STATUS.GETTING_M3U8_AUDIO_URL);
       m3u8Url = await extractM3u8Url();
     }
 
     // get vtt content of provided url if its required and possible
-    if (texttrackUrl !== null && (addVttContent || addPlainText)) {
+    if (
+      texttrackUrl !== null &&
+      (addVTTContent ||
+        addPlainText ||
+        addFormattedPlainText ||
+        addFormattedVTTContent)
+    ) {
       setCurrStatus(APP_STATUS.GETTING_VTT_CONTENT);
 
       vttGeneratedAt = Date.now();
       const response = await getVttContent(texttrackUrl);
 
-      if (response.status === "error" && !forceVttContent) {
+      if (response.status === "error" && !forceVTTContent) {
         setCurrStatus(APP_STATUS.ERROR_WHILE_GETTING_VTT_CONTENT);
         return;
       }
@@ -202,14 +241,14 @@ const HomePage = () => {
     }
 
     // get class audio in m4a format
-    if ((addAudio || (!vttContent && forceVttContent)) && m3u8Url !== null) {
+    if ((addAudio || (!vttContent && forceVTTContent)) && m3u8Url !== null) {
       setCurrStatus(APP_STATUS.GETTING_CLASS_AUDIO);
 
       audioGeneratedAt = Date.now();
       const filename = `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
         audioGeneratedAt
-      )}`;
-      const response = await saveAudioUsingM358Url(m3u8Url, filename);
+      )}-class_audio`;
+      const response = await saveAudioUsingM3u8Url(m3u8Url, filename);
 
       if (response.status === "error") {
         setCurrStatus(APP_STATUS.ERROR_WHILE_GETTING_AUDIO);
@@ -220,13 +259,13 @@ const HomePage = () => {
     }
 
     // generate vtt content if its required
-    if (!vttContent && forceVttContent && audioFileName) {
+    if (!vttContent && forceVTTContent && audioFileName) {
       setCurrStatus(APP_STATUS.GENERATING_VTT_CONTENT);
 
       vttGeneratedAt = Date.now();
-      const response = await generateVttContent(audioFileName);
+      const response = await generateVTTContent(audioFileName);
 
-      if (response.status === "error" && !forceVttContent) {
+      if (response.status === "error" && !forceVTTContent) {
         setCurrStatus(APP_STATUS.ERROR_WHILE_GENERATING_VTT);
         return;
       }
@@ -235,7 +274,7 @@ const HomePage = () => {
     }
 
     // get plain text version of vtt content if its required and possible
-    if (vttContent && addPlainText) {
+    if (vttContent && (addPlainText || addFormattedPlainText)) {
       setCurrStatus(APP_STATUS.CONVERTING_TO_PLAIN_TEXT);
       plainTextGeneratedAt = Date.now();
       const response = await vvtToPlainText(vttContent);
@@ -249,8 +288,8 @@ const HomePage = () => {
     }
 
     // get gemini format using plain text
-    if (addGeminiFormat && plainText) {
-      setCurrStatus(APP_STATUS.FORMATTING_USING_GEMINI);
+    if (addFormattedPlainText && plainText) {
+      setCurrStatus(APP_STATUS.FORMATTING_PLAIN_TEXT_USING_GEMINI);
       formattedPlainTextGeneratedAt = Date.now();
       const response = await formatPlainText(plainText);
 
@@ -259,8 +298,21 @@ const HomePage = () => {
         return;
       }
 
-      console.log(response.result);
       formattedPlainText = (response.result as string) ?? "";
+    }
+
+    // get gemini format using vtt content
+    if (addFormattedVTTContent && vttContent) {
+      setCurrStatus(APP_STATUS.FORMATTING_VTT_CONTENT_USING_GEMINI);
+      formattedVTTContentGeneratedAt = Date.now();
+      const response = await formatVTTContent(vttContent);
+
+      if (response.status === "error") {
+        setCurrStatus(APP_STATUS.ERROR_WHILE_FORMATTING_USING_GEMINI);
+        return;
+      }
+
+      formattedVTTContent = (response.result as string) ?? "";
     }
 
     // no data error
@@ -271,15 +323,15 @@ const HomePage = () => {
     }
 
     // save vtt content to history in srt format
-    if (addVttContent && vttContent) {
+    if (addVTTContent && vttContent) {
       const id = crypto.randomUUID();
       const newRow: DataRow = {
         id: id,
         generated_at: vttGeneratedAt,
         content: vttContent,
-        file_name: `${getUrlCourse()}-${getUrlClass()}-vtt-${formateDateForFileName(
+        file_name: `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
           vttGeneratedAt
-        )}.srt`,
+        )}-vtt_content.srt`,
       };
       newData.push(newRow);
     }
@@ -291,23 +343,37 @@ const HomePage = () => {
         id: id,
         generated_at: plainTextGeneratedAt,
         content: plainText,
-        file_name: `${getUrlCourse()}-${getUrlClass()}-plain-${formateDateForFileName(
+        file_name: `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
           plainTextGeneratedAt
-        )}.txt`,
+        )}-plain_text.txt`,
       };
       newData.push(newRow);
     }
 
     // save formatted plain text in txt format
-    if (addGeminiFormat && formattedPlainText) {
+    if (addFormattedPlainText && formattedPlainText) {
       const id = crypto.randomUUID();
       const newRow: DataRow = {
         id: id,
         generated_at: formattedPlainTextGeneratedAt,
         content: formattedPlainText,
-        file_name: `${getUrlCourse()}-${getUrlClass()}-formatted-${formateDateForFileName(
+        file_name: `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
           formattedPlainTextGeneratedAt
-        )}.txt`,
+        )}-formatted_plain_text.txt`,
+      };
+      newData.push(newRow);
+    }
+
+    // save formatted vtt content in txt format
+    if (addFormattedVTTContent && formattedVTTContent) {
+      const id = crypto.randomUUID();
+      const newRow: DataRow = {
+        id: id,
+        generated_at: formattedVTTContentGeneratedAt,
+        content: formattedVTTContent,
+        file_name: `${getUrlCourse()}-${getUrlClass()}-${formateDateForFileName(
+          formattedVTTContentGeneratedAt
+        )}-formatted_vtt_content.txt`,
       };
       newData.push(newRow);
     }
@@ -317,7 +383,7 @@ const HomePage = () => {
       const id = crypto.randomUUID();
       const newRow: DataRow = {
         id: id,
-        generated_at: plainTextGeneratedAt,
+        generated_at: audioGeneratedAt,
         content: plainText,
         file_name: audioFileName,
         is_audio: true,
@@ -353,7 +419,7 @@ const HomePage = () => {
 
   const extractTexttrackUrl = async (): Promise<string | null> => {
     const response = await getTexttrackUrl(url);
-    return response.result === false && (!addAudio || !forceVttContent)
+    return response.result === false && (!addAudio || !forceVTTContent)
       ? null
       : `${response.result}`;
   };
@@ -429,7 +495,7 @@ const HomePage = () => {
           className={flattenClasses(`
             text-center text-xs text-text-tertiary-light dark:text-text-tertiary-dark max-w-[40rem] overflow-hidden transition-all duration-300 ease-in-out
             ${
-              forceVttContent
+              forceVTTContent
                 ? "max-h-96 mb-4 opacity-100"
                 : "max-h-0 opacity-0"
             }
@@ -455,6 +521,7 @@ const HomePage = () => {
             value={url}
             label="Content URL"
             iconName="link"
+            type="url"
             layoutClassName="mb-4"
             disabled={appIsWaiting}
           />
@@ -467,9 +534,9 @@ const HomePage = () => {
               <Input
                 type="checkbox"
                 label="SubRip Subtitle (.srt)"
-                checked={addVttContent}
+                checked={addVTTContent}
                 onChange={() => {
-                  setAddVttContent(!addVttContent);
+                  setAddVTTContent(!addVTTContent);
                 }}
                 disabled={appIsWaiting}
                 layoutClassName="mb-2"
@@ -514,8 +581,27 @@ const HomePage = () => {
                   <Input
                     type="checkbox"
                     label="Try Generate VTT Content"
-                    checked={forceVttContent}
-                    onChange={() => setForceVttContent(!forceVttContent)}
+                    checked={forceVTTContent}
+                    onChange={() => setForceVTTContent(!forceVTTContent)}
+                    disabled={appIsWaiting}
+                    checkboxClassName="group-hover:!border-btn-warning-bg/90 group-hover:animate-pulse transition-all duration-300"
+                    labelCheckboxClassName="group-hover:!text-btn-warning-bg/90 transition-all duration-300"
+                    innerCheckboxClassName="group-hover:!bg-btn-warning-bg/90"
+                  />
+                </Tooltip>
+              </div>
+              <div className="relative flex gap-2 group w-full mb-2">
+                <Tooltip
+                  message="This option uses the gemini-2.5-flash model, so you'll need a Gemini API KEY"
+                  className="w-full justify-end"
+                >
+                  <Input
+                    type="checkbox"
+                    label="Gemini Format"
+                    checked={addFormattedPlainText}
+                    onChange={() => {
+                      setAddFormattedPlainText(!addFormattedPlainText);
+                    }}
                     disabled={appIsWaiting}
                     checkboxClassName="group-hover:!border-btn-warning-bg/90 group-hover:animate-pulse transition-all duration-300"
                     labelCheckboxClassName="group-hover:!text-btn-warning-bg/90 transition-all duration-300"
@@ -525,19 +611,19 @@ const HomePage = () => {
               </div>
               <div className="relative flex gap-2 group w-full">
                 <Tooltip
-                  message="This option uses the gemini-2.5-flash model, so you'll need a Gemini API KEY"
+                  message="This format include timestamps of VTT file content"
                   className="w-full justify-end"
                 >
                   <Input
                     type="checkbox"
-                    label="Gemini Format (.txt)"
-                    checked={addGeminiFormat}
+                    label="Gemini Format (timestamps)"
+                    checked={addFormattedVTTContent}
                     onChange={() => {
-                      setAddGeminiFormat(!addGeminiFormat);
+                      setAddFormattedVTTContent(!addFormattedVTTContent);
                     }}
                     disabled={appIsWaiting}
                     checkboxClassName="group-hover:!border-btn-warning-bg/90 group-hover:animate-pulse transition-all duration-300"
-                    labelCheckboxClassName="group-hover:!text-btn-warning-bg/90 transition-all duration-300"
+                    labelCheckboxClassName="group-hover:!text-btn-warning-bg/90 transition-all duration-300 truncate"
                     innerCheckboxClassName="group-hover:!bg-btn-warning-bg/90"
                   />
                 </Tooltip>
@@ -555,7 +641,11 @@ const HomePage = () => {
               appIsWaiting ||
               currStatus === APP_STATUS.INVALID_PROVIDED_URL ||
               currStatus == APP_STATUS.IDLE ||
-              (!addVttContent && !addPlainText && !addAudio)
+              (!addVTTContent &&
+                !addPlainText &&
+                !addAudio &&
+                !addFormattedPlainText &&
+                !addFormattedVTTContent)
             }
             isLoading={appIsWaiting}
           >
