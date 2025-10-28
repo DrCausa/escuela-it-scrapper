@@ -109,7 +109,7 @@ export const getM3u8Url = async (url: string): Promise<ResultResponse> => {
   }
 };
 
-export const saveAudioUsingM358Url = async (
+export const saveAudioUsingM3u8Url = async (
   url: string,
   file_name: string
 ): Promise<ResultResponse> => {
@@ -158,7 +158,7 @@ export const downloadSavedAudio = async (
   }
 };
 
-export const generateVttContent = async (
+export const generateVTTContent = async (
   fileName: string
 ): Promise<ResultResponse> => {
   try {
