@@ -481,15 +481,9 @@ const HomePage = () => {
   return (
     <div className="flex flex-col">
       <Card className="w-[32rem] mx-auto mt-15 flex flex-col">
-        <h5 className="text-center text-[32px] mb-4">EscuelaIT Scrapper</h5>
-        <div className="flex flex-col items-center mb-4 text-sm text-text-secondary-light dark:text-text-secondary-dark">
-          Provide a Content URL in this format:
-          <code>
-            https://escuela.it/cursos/
-            <span className="text-btn-primary-bg">[COURSE]</span>
-            /clase/
-            <span className="text-btn-primary-bg">[CONTENT]</span>
-          </code>
+        <h5 className="text-center text-[32px] mb-6">EscuelaIT Scrapper</h5>
+        <div className="flex flex-col items-center mb-2 text-sm text-text-secondary-light dark:text-text-secondary-dark">
+          Provide an URL:
         </div>
         <div
           className={flattenClasses(`
@@ -526,8 +520,8 @@ const HomePage = () => {
             disabled={appIsWaiting}
           />
           <div className="flex flex-row items-start justify-start mb-4 gap-5">
-            <div className="w-[50%] flex flex-col items-end">
-              <span className="mb-2 text-text-secondary-light dark:text-text-secondary-dark flex items-center gap-1">
+            <div className="w-[50%] flex flex-col items-start">
+              <span className="mb-4 text-text-secondary-light dark:text-text-secondary-dark flex items-center gap-1">
                 <Icon iconName="instant_mix" />
                 Formats
               </span>
@@ -562,8 +556,8 @@ const HomePage = () => {
                 layoutClassName="mb-2"
               />
             </div>
-            <div className="w-[50%] flex flex-col items-end">
-              <span className="text-text-secondary-light dark:text-text-secondary-dark mb-2 flex items-center gap-1">
+            <div className="w-[50%] flex flex-col items-start">
+              <span className="text-text-secondary-light dark:text-text-secondary-dark mb-4 flex items-center gap-1">
                 <div className="relative flex">
                   <Icon
                     iconName="experiment"
@@ -654,7 +648,7 @@ const HomePage = () => {
           </Button>
         </form>
       </Card>
-      <code className="max-w-[25rem] mx-auto text-base w-full text-center my-4 mb-16 text-text-tertiary-light dark:text-text-tertiary-dark">
+      <code className="max-w-[25rem] mx-auto text-base w-full text-center my-2 mb-16 text-text-tertiary-light dark:text-text-tertiary-dark">
         &lt; {readableAppStatus()} &#47;&gt;
       </code>
     </div>

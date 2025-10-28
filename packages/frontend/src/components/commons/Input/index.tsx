@@ -84,10 +84,9 @@ const Input = ({
       `;
 
       finalLabel = placeholder;
-
       finalInput = (
         <label
-          className="flex gap-2 items-center hover:cursor-pointer"
+          className="flex gap-2 items-start hover:cursor-pointer"
           htmlFor={id}
         >
           <input
@@ -223,12 +222,12 @@ const Input = ({
           <input
             className={flattenClasses(`
               ${inputBaseClassName}
-              ${disabled && disabledInputClassName}
+              ${disabled && disabledInputClassName} text-sm
             `)}
             type="text"
             name={name}
             id={id}
-            placeholder=""
+            placeholder={`https://escuela.it/cursos/[COURSE]/clase/[CONTENT]`}
             disabled={disabled}
             {...rest}
           />
