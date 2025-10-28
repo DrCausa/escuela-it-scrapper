@@ -1,5 +1,9 @@
 # Escuela IT Scrapper
 
+![Version](https://img.shields.io/badge/version-1.5.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Last Commit](https://img.shields.io/github/last-commit/DrCausa/escuela-it-scrapper)
+
 **Escuela IT Scrapper** is a full-stack web application designed to **extract, process, and organize educational content** from Escuela IT and similar sources.  
 It automates transcript retrieval, audio processing, and text formatting — powered by **Flask**, **Selenium**, and **Google Generative AI**.
 
@@ -45,7 +49,7 @@ escuela-it-scrapper/
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/your-username/escuela-it-scrapper.git
+   git clone https://github.com/DrCausa/escuela-it-scrapper.git
    cd escuela-it-scrapper
    ```
 
@@ -135,9 +139,10 @@ escuela-it-scrapper/
 
 ### 🤖 Gemini Service
 
-| Method | Endpoint                 | Description                                                           |
-| ------ | ------------------------ | --------------------------------------------------------------------- |
-| `POST` | `/api/format-plain-text` | Sends a plain text transcript to Google Generative AI for formatting. |
+| Method | Endpoint                  | Description                                                              |
+| ------ | ------------------------- | ------------------------------------------------------------------------ |
+| `POST` | `/api/format-plain-text`  | Sends a plain text transcript to Google Generative AI for formatting.    |
+| `POST` | `/api/format-vtt-content` | Send the contents of a .vtt file to Google Generative AI for formatting. |
 
 ---
 
